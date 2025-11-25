@@ -249,22 +249,20 @@ void Drum::updateDigitalInputState(Utils::InputState &input_state, const std::ma
         pad.updateTimeout(m_config.key_timeout_ms);
     }
 
-    // PHASE 2: Detect new hits - ONLY ONE trigger per cycle (with twin pad exception)
-    Id triggered_pad = Id::DON_LEFT; // Will hold which pad triggered
+    // PHASE 2: Detect new hits - check each pad independently
     bool any_triggered = false;
-    uint16_t highest_value = 0;
 
-    // Find the strongest hit that passes all checks
     for (const auto &[id, pad] : m_pads) {
-        // Skip if pad is already active (key timeout not expired)
+        // Skip if pad is already active (key timeout not expired - ABSOLUTE)
         if (pad.getState()) {
             continue;
         }
 
         const uint16_t adc_value = raw_values.at(id);
         const uint16_t light_threshold = getThreshold(id, m_config.trigger_thresholds);
+        const uint16_t heavy_threshold = getThreshold(id, m_config.double_trigger_thresholds);
 
-        // Check if above threshold
+        // Check if above light threshold
         if (adc_value <= light_threshold) {
             continue;
         }
@@ -280,58 +278,29 @@ void Drum::updateDigitalInputState(Utils::InputState &input_state, const std::ma
             continue;
         }
 
-        // Global debounce check - ALL pads must respect this
-        if (!global_debounce_ok) {
-            continue;
+        // Two trigger conditions (both respect key timeout above):
+        // 1. Light hit: requires global debounce to be clear
+        // 2. Heavy hit: bypasses global debounce (only if Threshold mode enabled)
+        bool should_trigger = false;
+
+        if (global_debounce_ok) {
+            // Light hit is OK
+            should_trigger = true;
+        } else if (m_config.double_trigger_mode == Config::DoubleTriggerMode::Threshold &&
+                   adc_value > heavy_threshold) {
+            // Heavy hit bypasses global debounce (only in Threshold mode)
+            should_trigger = true;
         }
 
-        // Track the strongest hit
-        if (adc_value > highest_value) {
-            highest_value = adc_value;
-            triggered_pad = id;
+        if (should_trigger) {
+            m_pads.at(id).trigger(m_config.key_timeout_ms);
             any_triggered = true;
         }
     }
 
-    // PHASE 3: Trigger the winning pad (if any)
+    // PHASE 3: Update global debounce if any hit occurred
     if (any_triggered) {
-        m_pads.at(triggered_pad).trigger(m_config.key_timeout_ms);
         updateGlobalDebounce();
-
-        // PHASE 4: Check twin pad exception (only if Threshold mode is enabled)
-        if (m_config.double_trigger_mode == Config::DoubleTriggerMode::Threshold) {
-            // If a Don/Ka was triggered, check if its twin can also trigger (heavy threshold only)
-            Id twin_pad;
-            bool has_twin = false;
-
-            if (triggered_pad == Id::DON_LEFT) {
-                twin_pad = Id::DON_RIGHT;
-                has_twin = true;
-            } else if (triggered_pad == Id::DON_RIGHT) {
-                twin_pad = Id::DON_LEFT;
-                has_twin = true;
-            } else if (triggered_pad == Id::KA_LEFT) {
-                twin_pad = Id::KA_RIGHT;
-                has_twin = true;
-            } else if (triggered_pad == Id::KA_RIGHT) {
-                twin_pad = Id::KA_LEFT;
-                has_twin = true;
-            }
-
-            if (has_twin && !m_pads.at(twin_pad).getState()) {
-                const uint16_t twin_value = raw_values.at(twin_pad);
-                const uint16_t heavy_threshold = getThreshold(twin_pad, m_config.double_trigger_thresholds);
-
-                // Twin can trigger ONLY if exceeds heavy threshold
-                if (twin_value > heavy_threshold) {
-                    // Check twin's per-sensor debounce
-                    const uint32_t twin_time_since_change = now - m_pads.at(twin_pad).getLastChange();
-                    if (twin_time_since_change >= m_config.debounce_delay_ms) {
-                        m_pads.at(twin_pad).trigger(m_config.key_timeout_ms);
-                    }
-                }
-            }
-        }
     }
 
     // PHASE 5: Output to InputState

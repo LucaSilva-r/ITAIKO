@@ -32,24 +32,24 @@ const I2c i2c_config = {
 const Peripherals::Drum::Config drum_config = {
     .trigger_thresholds =
         {
-            .don_left = 300,
-            .ka_left = 400,
-            .don_right = 300,
-            .ka_right = 400,
+            .don_left = 350,
+            .ka_left = 450,
+            .don_right = 350,
+            .ka_right = 450,
         },
 
     .double_trigger_mode = Peripherals::Drum::Config::DoubleTriggerMode::Off,
     .double_trigger_thresholds =
         {
-            .don_left = 2500,                                                                                                                                                                                             
-            .ka_left = 2000,
-            .don_right = 2500,
-            .ka_right = 2000,
+            .don_left = 3000,                                                                                                                                                                                             
+            .ka_left = 2500,
+            .don_right = 3000,
+            .ka_right = 2500,
         },
 
     .debounce_delay_ms = 25,
-    .global_debounce_ms = 30,
-    .key_timeout_ms = 50,
+    .global_debounce_ms = 40,
+    .key_timeout_ms = 30,
     .anti_ghost_don_enabled = true,
     .anti_ghost_ka_enabled = true,
     .roll_counter_timeout_ms = 500,
