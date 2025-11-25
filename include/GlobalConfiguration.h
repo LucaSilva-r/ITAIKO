@@ -23,8 +23,8 @@ namespace Default {
 const usb_mode_t usb_mode = USB_MODE_SWITCH_TATACON;
 
 const I2c i2c_config = {
-    .sda_pin = 14,
-    .scl_pin = 15,
+    .sda_pin = 6,
+    .scl_pin = 7,
     .block = i2c1,
     .speed_hz = 1000000,
 };
@@ -32,10 +32,10 @@ const I2c i2c_config = {
 const Peripherals::Drum::Config drum_config = {
     .trigger_thresholds =
         {
-            .don_left = 10,
-            .ka_left = 5,
-            .don_right = 10,
-            .ka_right = 5,
+            .don_left = 120,
+            .ka_left = 120,
+            .don_right = 120,
+            .ka_right = 120,
         },
 
     .double_trigger_mode = Peripherals::Drum::Config::DoubleTriggerMode::Off,
@@ -52,28 +52,28 @@ const Peripherals::Drum::Config drum_config = {
 
     .adc_channels =
         {
-            .don_left = 3,
-            .ka_left = 2,
-            .don_right = 0,
-            .ka_right = 1,
+            .don_left = 2,
+            .ka_left = 3,
+            .don_right = 1,
+            .ka_right = 0,
         },
 
     // ADC Config, either InternalAdc or ExternalAdc
-    // .adc_config =
-    //     Peripherals::Drum::Config::InternalAdc{
-    //         .sample_count = 16,
-    //     },
-
     .adc_config =
-        Peripherals::Drum::Config::ExternalAdc{
-            .spi_block = spi1,
-            .spi_speed_hz = 2000000,
-            .spi_mosi_pin = 11,
-            .spi_miso_pin = 12,
-            .spi_sclk_pin = 10,
-            .spi_scsn_pin = 13,
-            .spi_level_shifter_enable_pin = 9,
+        Peripherals::Drum::Config::InternalAdc{
+            .sample_count = 16,
         },
+
+    // .adc_config =
+    //     Peripherals::Drum::Config::ExternalAdc{
+    //         .spi_block = spi1,
+    //         .spi_speed_hz = 2000000,
+    //         .spi_mosi_pin = 11,
+    //         .spi_miso_pin = 12,
+    //         .spi_sclk_pin = 10,
+    //         .spi_scsn_pin = 13,
+    //         .spi_level_shifter_enable_pin = 9,
+    //     },
 };
 
 const Peripherals::Controller::Config controller_config = {
@@ -81,40 +81,40 @@ const Peripherals::Controller::Config controller_config = {
         {
             .dpad =
                 {
-                    .up = 8,
+                    .up = 13,
                     .down = 9,
-                    .left = 10,
-                    .right = 11,
+                    .left = 12,
+                    .right = 10,
                 },
             .buttons =
                 {
-                    .north = 0,
-                    .east = 3,
-                    .south = 1,
-                    .west = 2,
+                    .north = 1,
+                    .east = 8,
+                    .south = 2,
+                    .west = 4,
 
-                    .l = 12,
-                    .r = 4,
+                    .l = 15,
+                    .r = 0,
 
-                    .start = 5,
-                    .select = 13,
-                    .home = 6,
-                    .share = 14,
+                    .start = 3,
+                    .select = 14,
+                    .home = 5,
+                    .share = 11,
                 },
         },
 
     .debounce_delay_ms = 25,
 
     // GPIO Config, either InternalGpio or ExternalGpio
-    // .gpio_config = Peripherals::Controller::Config::InternalGpio{},
-    .gpio_config =
-        Peripherals::Controller::Config::ExternalGpio{
-            .i2c =
-                {
-                    .block = i2c_config.block,
-                    .address = 0x20,
-                },
-        },
+    .gpio_config = Peripherals::Controller::Config::InternalGpio{},
+    // .gpio_config =
+    //     Peripherals::Controller::Config::ExternalGpio{
+    //         .i2c =
+    //             {
+    //                 .block = i2c_config.block,
+    //                 .address = 0x20,
+    //             },
+    //     },
 };
 
 const Peripherals::StatusLed::Config led_config = {
