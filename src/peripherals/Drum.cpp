@@ -74,6 +74,33 @@ void Drum::Pad::setState(const bool state, const uint16_t debounce_delay) {
     }
 }
 
+void Drum::Pad::trigger(const uint16_t key_timeout) {
+    const uint32_t now = to_ms_since_boot(get_absolute_time());
+
+    // Respect per-pad debounce
+    if (m_last_change + key_timeout > now) {
+        return; // Too soon since last state change
+    }
+
+    m_active = true;
+    m_last_trigger = now;
+    m_last_change = now;
+}
+
+void Drum::Pad::updateTimeout(const uint16_t key_timeout) {
+    if (!m_active) {
+        return; // Not currently pressed
+    }
+
+    const uint32_t now = to_ms_since_boot(get_absolute_time());
+
+    // Check if key timeout has expired
+    if (now - m_last_trigger > key_timeout) {
+        m_active = false;
+        m_last_change = now;
+    }
+}
+
 uint16_t Drum::Pad::getAnalog() {
     const auto raw_to_uint16 = [](uint16_t raw) { return ((raw << 4) & 0xFFF0) | ((raw >> 8) & 0x000F); };
 
@@ -165,104 +192,153 @@ std::map<Drum::Id, uint16_t> Drum::readInputs() {
     return result;
 }
 
-void Drum::updateDigitalInputState(Utils::InputState &input_state, const std::map<Drum::Id, uint16_t> &raw_values) {
-    const auto resolve_twin_pads = [&](Id left, Id right) {
-        const auto is_over_threshold = [&raw_values](const Id target, const auto &thresholds) {
-            const auto get_threshold = [&thresholds](const Id target) {
-                switch (target) {
-                case Id::DON_LEFT:
-                    return thresholds.don_left;
-                case Id::DON_RIGHT:
-                    return thresholds.don_right;
-                case Id::KA_LEFT:
-                    return thresholds.ka_left;
-                case Id::KA_RIGHT:
-                    return thresholds.ka_right;
-                }
-                assert(false);
-                return (uint16_t)0;
-            };
-            return (raw_values.at(target) > get_threshold(target));
-        };
+bool Drum::isGlobalDebounceElapsed() const {
+    const uint32_t now = to_ms_since_boot(get_absolute_time());
+    return (now - m_global_debounce_time) >= m_config.global_debounce_ms;
+}
 
-        const auto resolve_single_trigger = [&]() {
-            if (!is_over_threshold(left, m_config.trigger_thresholds) &&
-                !is_over_threshold(right, m_config.trigger_thresholds)) {
+void Drum::updateGlobalDebounce() { m_global_debounce_time = to_ms_since_boot(get_absolute_time()); }
 
-                m_pads.at(left).setState(false, m_config.debounce_delay_ms);
-                m_pads.at(right).setState(false, m_config.debounce_delay_ms);
-                return;
-            }
+bool Drum::isAntiGhostOk(const Id pad_id) const {
+    // Determine if pad is Don (sides) or Ka (center)
+    const bool is_don_pad = (pad_id == Id::DON_LEFT || pad_id == Id::DON_RIGHT);
+    const bool is_ka_pad = (pad_id == Id::KA_LEFT || pad_id == Id::KA_RIGHT);
 
-            // Trigger twin pad if within 50% of hit strength to allow
-            // simultaneous hits while still rejecting unintended double hits.
-            if (raw_values.at(left) > raw_values.at(right)) {
-                m_pads.at(left).setState(true, m_config.debounce_delay_ms);
-
-                if (raw_values.at(right) > (raw_values.at(left) >> 1)) {
-                    m_pads.at(right).setState(true, m_config.debounce_delay_ms);
-                } else {
-                    m_pads.at(right).setState(false, m_config.debounce_delay_ms);
-                }
-            } else {
-                m_pads.at(right).setState(true, m_config.debounce_delay_ms);
-
-                if (raw_values.at(left) > (raw_values.at(right) >> 1)) {
-                    m_pads.at(left).setState(true, m_config.debounce_delay_ms);
-                } else {
-                    m_pads.at(left).setState(false, m_config.debounce_delay_ms);
-                }
-            }
-        };
-
-        switch (m_config.double_trigger_mode) {
-        case Config::DoubleTriggerMode::Off:
-            resolve_single_trigger();
-            break;
-        case Config::DoubleTriggerMode::Threshold:
-            if (is_over_threshold(left, m_config.double_trigger_thresholds) ||
-                is_over_threshold(right, m_config.double_trigger_thresholds)) {
-
-                m_pads.at(left).setState(true, m_config.debounce_delay_ms);
-                m_pads.at(right).setState(true, m_config.debounce_delay_ms);
-            } else {
-                resolve_single_trigger();
-            }
-            break;
-        case Config::DoubleTriggerMode::Always:
-            if (is_over_threshold(left, m_config.trigger_thresholds) ||
-                is_over_threshold(right, m_config.trigger_thresholds)) {
-
-                m_pads.at(left).setState(true, m_config.debounce_delay_ms);
-                m_pads.at(right).setState(true, m_config.debounce_delay_ms);
-            } else {
-                m_pads.at(left).setState(false, m_config.debounce_delay_ms);
-                m_pads.at(right).setState(false, m_config.debounce_delay_ms);
-            }
-            break;
+    // Check if opposite type is currently active
+    if (is_don_pad && m_config.anti_ghost_don_enabled) {
+        // Don pads: check if any Ka pad is active
+        const bool ka_active = m_pads.at(Id::KA_LEFT).getState() || m_pads.at(Id::KA_RIGHT).getState();
+        if (ka_active) {
+            return false; // Block Don
         }
-    };
-
-    // Either DON or KA can be active at a time
-    if (std::max(raw_values.at(Id::DON_LEFT), raw_values.at(Id::DON_RIGHT)) >
-        std::max(raw_values.at(Id::KA_LEFT), raw_values.at(Id::KA_RIGHT))) {
-
-        resolve_twin_pads(Id::DON_LEFT, Id::DON_RIGHT);
-
-        m_pads.at(Id::KA_LEFT).setState(false, m_config.debounce_delay_ms);
-        m_pads.at(Id::KA_RIGHT).setState(false, m_config.debounce_delay_ms);
-    } else {
-        resolve_twin_pads(Id::KA_LEFT, Id::KA_RIGHT);
-
-        m_pads.at(Id::DON_LEFT).setState(false, m_config.debounce_delay_ms);
-        m_pads.at(Id::DON_RIGHT).setState(false, m_config.debounce_delay_ms);
     }
 
+    if (is_ka_pad && m_config.anti_ghost_ka_enabled) {
+        // Ka pads: check if any Don pad is active
+        const bool don_active = m_pads.at(Id::DON_LEFT).getState() || m_pads.at(Id::DON_RIGHT).getState();
+        if (don_active) {
+            return false; // Block Ka
+        }
+    }
+
+    return true; // Anti-ghosting OK
+}
+
+uint16_t Drum::getThreshold(const Id pad_id, const Config::Thresholds &thresholds) const {
+    switch (pad_id) {
+    case Id::DON_LEFT:
+        return thresholds.don_left;
+    case Id::DON_RIGHT:
+        return thresholds.don_right;
+    case Id::KA_LEFT:
+        return thresholds.ka_left;
+    case Id::KA_RIGHT:
+        return thresholds.ka_right;
+    }
+    assert(false);
+    return 0;
+}
+
+void Drum::updateDigitalInputState(Utils::InputState &input_state, const std::map<Drum::Id, uint16_t> &raw_values) {
+    const uint32_t now = to_ms_since_boot(get_absolute_time());
+    const bool global_debounce_ok = isGlobalDebounceElapsed();
+
+    // PHASE 1: Maintain existing button states (key timeout logic)
+    // Key timeout is ABSOLUTE - no pad can retrigger until timeout expires
+    for (auto &[id, pad] : m_pads) {
+        pad.updateTimeout(m_config.key_timeout_ms);
+    }
+
+    // PHASE 2: Detect new hits - ONLY ONE trigger per cycle (with twin pad exception)
+    Id triggered_pad = Id::DON_LEFT; // Will hold which pad triggered
+    bool any_triggered = false;
+    uint16_t highest_value = 0;
+
+    // Find the strongest hit that passes all checks
+    for (const auto &[id, pad] : m_pads) {
+        // Skip if pad is already active (key timeout not expired)
+        if (pad.getState()) {
+            continue;
+        }
+
+        const uint16_t adc_value = raw_values.at(id);
+        const uint16_t light_threshold = getThreshold(id, m_config.trigger_thresholds);
+
+        // Check if above threshold
+        if (adc_value <= light_threshold) {
+            continue;
+        }
+
+        // Anti-ghosting check - blocks opposite pad type
+        if (!isAntiGhostOk(id)) {
+            continue;
+        }
+
+        // Per-sensor debounce check (hold time from last state change)
+        const uint32_t time_since_change = now - m_pads.at(id).getLastChange();
+        if (time_since_change < m_config.debounce_delay_ms) {
+            continue;
+        }
+
+        // Global debounce check - ALL pads must respect this
+        if (!global_debounce_ok) {
+            continue;
+        }
+
+        // Track the strongest hit
+        if (adc_value > highest_value) {
+            highest_value = adc_value;
+            triggered_pad = id;
+            any_triggered = true;
+        }
+    }
+
+    // PHASE 3: Trigger the winning pad (if any)
+    if (any_triggered) {
+        m_pads.at(triggered_pad).trigger(m_config.key_timeout_ms);
+        updateGlobalDebounce();
+
+        // PHASE 4: Check twin pad exception
+        // If a Don/Ka was triggered, check if its twin can also trigger (heavy threshold only)
+        Id twin_pad;
+        bool has_twin = false;
+
+        if (triggered_pad == Id::DON_LEFT) {
+            twin_pad = Id::DON_RIGHT;
+            has_twin = true;
+        } else if (triggered_pad == Id::DON_RIGHT) {
+            twin_pad = Id::DON_LEFT;
+            has_twin = true;
+        } else if (triggered_pad == Id::KA_LEFT) {
+            twin_pad = Id::KA_RIGHT;
+            has_twin = true;
+        } else if (triggered_pad == Id::KA_RIGHT) {
+            twin_pad = Id::KA_LEFT;
+            has_twin = true;
+        }
+
+        if (has_twin && !m_pads.at(twin_pad).getState()) {
+            const uint16_t twin_value = raw_values.at(twin_pad);
+            const uint16_t heavy_threshold = getThreshold(twin_pad, m_config.double_trigger_thresholds);
+
+            // Twin can trigger ONLY if exceeds heavy threshold
+            if (twin_value > heavy_threshold) {
+                // Check twin's per-sensor debounce
+                const uint32_t twin_time_since_change = now - m_pads.at(twin_pad).getLastChange();
+                if (twin_time_since_change >= m_config.debounce_delay_ms) {
+                    m_pads.at(twin_pad).trigger(m_config.key_timeout_ms);
+                }
+            }
+        }
+    }
+
+    // PHASE 5: Output to InputState
     input_state.drum.don_left.triggered = m_pads.at(Id::DON_LEFT).getState();
     input_state.drum.ka_left.triggered = m_pads.at(Id::KA_LEFT).getState();
     input_state.drum.don_right.triggered = m_pads.at(Id::DON_RIGHT).getState();
     input_state.drum.ka_right.triggered = m_pads.at(Id::KA_RIGHT).getState();
 
+    // PHASE 6: Update roll counter
     m_roll_counter.update(input_state);
 }
 
@@ -300,6 +376,14 @@ void Drum::updateInputState(Utils::InputState &input_state) {
 }
 
 void Drum::setDebounceDelay(const uint16_t delay) { m_config.debounce_delay_ms = delay; }
+
+void Drum::setGlobalDebounceMs(const uint16_t ms) { m_config.global_debounce_ms = ms; }
+
+void Drum::setKeyTimeoutMs(const uint16_t ms) { m_config.key_timeout_ms = ms; }
+
+void Drum::setAntiGhostDonEnabled(const bool enabled) { m_config.anti_ghost_don_enabled = enabled; }
+
+void Drum::setAntiGhostKaEnabled(const bool enabled) { m_config.anti_ghost_ka_enabled = enabled; }
 
 void Drum::setTriggerThresholds(const Config::Thresholds &thresholds) { m_config.trigger_thresholds = thresholds; }
 
