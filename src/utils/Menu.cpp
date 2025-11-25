@@ -57,8 +57,7 @@ const std::map<Menu::Page, const Menu::Descriptor> Menu::descriptors = {
      {Menu::Descriptor::Type::Menu,                                                  //
       "Double Hit Mode",                                                             //
       {{"Off", Menu::Descriptor::Action::SetDoubleTriggerOff},                       //
-       {"Threshold", Menu::Descriptor::Action::GotoPageDrumDoubleTriggerThresholds}, //
-       {"Always", Menu::Descriptor::Action::SetDoubleTriggerAlways}},                //
+       {"Threshold", Menu::Descriptor::Action::GotoPageDrumDoubleTriggerThresholds}}, //
       0}},                                                                           //
 
     {Menu::Page::DrumDoubleTriggerThresholds,                                               //

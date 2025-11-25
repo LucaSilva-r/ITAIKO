@@ -298,35 +298,37 @@ void Drum::updateDigitalInputState(Utils::InputState &input_state, const std::ma
         m_pads.at(triggered_pad).trigger(m_config.key_timeout_ms);
         updateGlobalDebounce();
 
-        // PHASE 4: Check twin pad exception
-        // If a Don/Ka was triggered, check if its twin can also trigger (heavy threshold only)
-        Id twin_pad;
-        bool has_twin = false;
+        // PHASE 4: Check twin pad exception (only if Threshold mode is enabled)
+        if (m_config.double_trigger_mode == Config::DoubleTriggerMode::Threshold) {
+            // If a Don/Ka was triggered, check if its twin can also trigger (heavy threshold only)
+            Id twin_pad;
+            bool has_twin = false;
 
-        if (triggered_pad == Id::DON_LEFT) {
-            twin_pad = Id::DON_RIGHT;
-            has_twin = true;
-        } else if (triggered_pad == Id::DON_RIGHT) {
-            twin_pad = Id::DON_LEFT;
-            has_twin = true;
-        } else if (triggered_pad == Id::KA_LEFT) {
-            twin_pad = Id::KA_RIGHT;
-            has_twin = true;
-        } else if (triggered_pad == Id::KA_RIGHT) {
-            twin_pad = Id::KA_LEFT;
-            has_twin = true;
-        }
+            if (triggered_pad == Id::DON_LEFT) {
+                twin_pad = Id::DON_RIGHT;
+                has_twin = true;
+            } else if (triggered_pad == Id::DON_RIGHT) {
+                twin_pad = Id::DON_LEFT;
+                has_twin = true;
+            } else if (triggered_pad == Id::KA_LEFT) {
+                twin_pad = Id::KA_RIGHT;
+                has_twin = true;
+            } else if (triggered_pad == Id::KA_RIGHT) {
+                twin_pad = Id::KA_LEFT;
+                has_twin = true;
+            }
 
-        if (has_twin && !m_pads.at(twin_pad).getState()) {
-            const uint16_t twin_value = raw_values.at(twin_pad);
-            const uint16_t heavy_threshold = getThreshold(twin_pad, m_config.double_trigger_thresholds);
+            if (has_twin && !m_pads.at(twin_pad).getState()) {
+                const uint16_t twin_value = raw_values.at(twin_pad);
+                const uint16_t heavy_threshold = getThreshold(twin_pad, m_config.double_trigger_thresholds);
 
-            // Twin can trigger ONLY if exceeds heavy threshold
-            if (twin_value > heavy_threshold) {
-                // Check twin's per-sensor debounce
-                const uint32_t twin_time_since_change = now - m_pads.at(twin_pad).getLastChange();
-                if (twin_time_since_change >= m_config.debounce_delay_ms) {
-                    m_pads.at(twin_pad).trigger(m_config.key_timeout_ms);
+                // Twin can trigger ONLY if exceeds heavy threshold
+                if (twin_value > heavy_threshold) {
+                    // Check twin's per-sensor debounce
+                    const uint32_t twin_time_since_change = now - m_pads.at(twin_pad).getLastChange();
+                    if (twin_time_since_change >= m_config.debounce_delay_ms) {
+                        m_pads.at(twin_pad).trigger(m_config.key_timeout_ms);
+                    }
                 }
             }
         }
