@@ -24,6 +24,11 @@ class Menu {
         Bootsel,
 
         DrumDebounceDelay,
+        DrumGlobalDebounce,
+        DrumKeyTimeout,
+        DrumAntiGhosting,
+        DrumAntiGhostDon,
+        DrumAntiGhostKa,
         DrumTriggerThresholds,
         DrumDoubleTrigger,
 
@@ -71,6 +76,11 @@ class Menu {
             GotoPageBootsel,
 
             GotoPageDrumDebounceDelay,
+            GotoPageDrumGlobalDebounce,
+            GotoPageDrumKeyTimeout,
+            GotoPageDrumAntiGhosting,
+            GotoPageDrumAntiGhostDon,
+            GotoPageDrumAntiGhostKa,
             GotoPageDrumDoubleTrigger,
             GotoPageDrumTriggerThresholds,
             GotoPageDrumDoubleTriggerThresholds,
@@ -91,6 +101,10 @@ class Menu {
             SetUsbMode,
 
             SetDrumDebounceDelay,
+            SetDrumGlobalDebounce,
+            SetDrumKeyTimeout,
+            SetDrumAntiGhostDon,
+            SetDrumAntiGhostKa,
 
             SetDoubleTriggerOff,
             SetDoubleTriggerAlways,

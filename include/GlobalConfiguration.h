@@ -48,6 +48,10 @@ const Peripherals::Drum::Config drum_config = {
         },
 
     .debounce_delay_ms = 25,
+    .global_debounce_ms = 30,
+    .key_timeout_ms = 50,
+    .anti_ghost_don_enabled = true,
+    .anti_ghost_ka_enabled = true,
     .roll_counter_timeout_ms = 500,
 
     .adc_channels =

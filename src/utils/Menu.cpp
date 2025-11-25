@@ -33,13 +33,16 @@ const std::map<Menu::Page, const Menu::Descriptor> Menu::descriptors = {
        {"Debug", Menu::Descriptor::Action::SetUsbMode}},     //
       0}},                                                   //
 
-    {Menu::Page::Drum,                                                          //
-     {Menu::Descriptor::Type::Menu,                                             //
-      "Drum Settings",                                                          //
-      {{"Hold Time", Menu::Descriptor::Action::GotoPageDrumDebounceDelay},      //
-       {"Thresholds", Menu::Descriptor::Action::GotoPageDrumTriggerThresholds}, //
-       {"Double Trg", Menu::Descriptor::Action::GotoPageDrumDoubleTrigger}},    //
-      0}},                                                                      //
+    {Menu::Page::Drum,                                                           //
+     {Menu::Descriptor::Type::Menu,                                              //
+      "Drum Settings",                                                           //
+      {{"Hold Time", Menu::Descriptor::Action::GotoPageDrumDebounceDelay},       //
+       {"Key Time", Menu::Descriptor::Action::GotoPageDrumKeyTimeout},           //
+       {"Debounce", Menu::Descriptor::Action::GotoPageDrumGlobalDebounce},       //
+       {"Anti-Ghost", Menu::Descriptor::Action::GotoPageDrumAntiGhosting},       //
+       {"Thresholds", Menu::Descriptor::Action::GotoPageDrumTriggerThresholds},  //
+       {"Double Trg", Menu::Descriptor::Action::GotoPageDrumDoubleTrigger}},     //
+      0}},                                                                       //
 
     {Menu::Page::DrumTriggerThresholds,                                               //
      {Menu::Descriptor::Type::Menu,                                                   //
@@ -72,6 +75,37 @@ const std::map<Menu::Page, const Menu::Descriptor> Menu::descriptors = {
       "Hit Hold Time (ms)",                                   //
       {{"", Menu::Descriptor::Action::SetDrumDebounceDelay}}, //
       UINT8_MAX}},
+
+    {Menu::Page::DrumKeyTimeout,                           //
+     {Menu::Descriptor::Type::Value,                       //
+      "Key Timeout (ms)",                                  //
+      {{"", Menu::Descriptor::Action::SetDrumKeyTimeout}}, //
+      UINT8_MAX}},
+
+    {Menu::Page::DrumGlobalDebounce,                           //
+     {Menu::Descriptor::Type::Value,                           //
+      "Global Debounce (ms)",                                  //
+      {{"", Menu::Descriptor::Action::SetDrumGlobalDebounce}}, //
+      UINT8_MAX}},
+
+    {Menu::Page::DrumAntiGhosting,                                    //
+     {Menu::Descriptor::Type::Menu,                                   //
+      "Anti-Ghosting",                                                //
+      {{"Don Pads", Menu::Descriptor::Action::GotoPageDrumAntiGhostDon}, //
+       {"Ka Pads", Menu::Descriptor::Action::GotoPageDrumAntiGhostKa}},  //
+      0}},                                                            //
+
+    {Menu::Page::DrumAntiGhostDon,                           //
+     {Menu::Descriptor::Type::Toggle,                        //
+      "Don Anti-Ghost",                                      //
+      {{"", Menu::Descriptor::Action::SetDrumAntiGhostDon}}, //
+      0}},                                                   //
+
+    {Menu::Page::DrumAntiGhostKa,                           //
+     {Menu::Descriptor::Type::Toggle,                       //
+      "Ka Anti-Ghost",                                      //
+      {{"", Menu::Descriptor::Action::SetDrumAntiGhostKa}}, //
+      0}},                                                  //
 
     {Menu::Page::DrumTriggerThresholdKaLeft,                           //
      {Menu::Descriptor::Type::Value,                                   //
@@ -238,6 +272,14 @@ uint16_t Menu::getCurrentValue(Menu::Page page) {
         return static_cast<uint16_t>(m_store->getUsbMode());
     case Page::DrumDebounceDelay:
         return m_store->getDebounceDelay();
+    case Page::DrumKeyTimeout:
+        return m_store->getKeyTimeoutMs();
+    case Page::DrumGlobalDebounce:
+        return m_store->getGlobalDebounceMs();
+    case Page::DrumAntiGhostDon:
+        return static_cast<uint16_t>(m_store->getAntiGhostDonEnabled());
+    case Page::DrumAntiGhostKa:
+        return static_cast<uint16_t>(m_store->getAntiGhostKaEnabled());
     case Page::DrumDoubleTrigger:
         return static_cast<uint16_t>(m_store->getDoubleTriggerMode());
     case Page::DrumTriggerThresholdKaLeft:
@@ -262,6 +304,7 @@ uint16_t Menu::getCurrentValue(Menu::Page page) {
         return static_cast<uint16_t>(m_store->getLedEnablePlayerColor());
     case Page::Main:
     case Page::Drum:
+    case Page::DrumAntiGhosting:
     case Page::DrumTriggerThresholds:
     case Page::DrumDoubleTriggerThresholds:
     case Page::Led:
@@ -294,6 +337,18 @@ void Menu::gotoParent(bool do_restore) {
             break;
         case Page::DrumDebounceDelay:
             m_store->setDebounceDelay(current_state.original_value);
+            break;
+        case Page::DrumKeyTimeout:
+            m_store->setKeyTimeoutMs(current_state.original_value);
+            break;
+        case Page::DrumGlobalDebounce:
+            m_store->setGlobalDebounceMs(current_state.original_value);
+            break;
+        case Page::DrumAntiGhostDon:
+            m_store->setAntiGhostDonEnabled(static_cast<bool>(current_state.original_value));
+            break;
+        case Page::DrumAntiGhostKa:
+            m_store->setAntiGhostKaEnabled(static_cast<bool>(current_state.original_value));
             break;
         case Page::DrumTriggerThresholdKaLeft: {
             auto thresholds = m_store->getTriggerThresholds();
@@ -355,6 +410,7 @@ void Menu::gotoParent(bool do_restore) {
             break;
         case Page::Main:
         case Page::Drum:
+        case Page::DrumAntiGhosting:
         case Page::DrumTriggerThresholds:
         case Page::DrumDoubleTriggerThresholds:
         case Page::Led:
@@ -403,6 +459,21 @@ void Menu::performAction(Descriptor::Action action, uint16_t value) {
     case Descriptor::Action::GotoPageDrumDebounceDelay:
         gotoPage(Page::DrumDebounceDelay);
         break;
+    case Descriptor::Action::GotoPageDrumKeyTimeout:
+        gotoPage(Page::DrumKeyTimeout);
+        break;
+    case Descriptor::Action::GotoPageDrumGlobalDebounce:
+        gotoPage(Page::DrumGlobalDebounce);
+        break;
+    case Descriptor::Action::GotoPageDrumAntiGhosting:
+        gotoPage(Page::DrumAntiGhosting);
+        break;
+    case Descriptor::Action::GotoPageDrumAntiGhostDon:
+        gotoPage(Page::DrumAntiGhostDon);
+        break;
+    case Descriptor::Action::GotoPageDrumAntiGhostKa:
+        gotoPage(Page::DrumAntiGhostKa);
+        break;
     case Descriptor::Action::GotoPageDrumTriggerThresholdKaLeft:
         gotoPage(Page::DrumTriggerThresholdKaLeft);
         break;
@@ -438,6 +509,18 @@ void Menu::performAction(Descriptor::Action action, uint16_t value) {
         break;
     case Descriptor::Action::SetDrumDebounceDelay:
         m_store->setDebounceDelay(value);
+        break;
+    case Descriptor::Action::SetDrumKeyTimeout:
+        m_store->setKeyTimeoutMs(value);
+        break;
+    case Descriptor::Action::SetDrumGlobalDebounce:
+        m_store->setGlobalDebounceMs(value);
+        break;
+    case Descriptor::Action::SetDrumAntiGhostDon:
+        m_store->setAntiGhostDonEnabled(static_cast<bool>(value));
+        break;
+    case Descriptor::Action::SetDrumAntiGhostKa:
+        m_store->setAntiGhostKaEnabled(static_cast<bool>(value));
         break;
     case Descriptor::Action::SetDoubleTriggerOff:
         m_store->setDoubleTriggerMode(Peripherals::Drum::Config::DoubleTriggerMode::Off);

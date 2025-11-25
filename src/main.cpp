@@ -174,6 +174,10 @@ int main() {
                          .data = {.led_enable_player_color = settings_store->getLedEnablePlayerColor()}});
 
         drum.setDebounceDelay(settings_store->getDebounceDelay());
+        drum.setGlobalDebounceMs(settings_store->getGlobalDebounceMs());
+        drum.setKeyTimeoutMs(settings_store->getKeyTimeoutMs());
+        drum.setAntiGhostDonEnabled(settings_store->getAntiGhostDonEnabled());
+        drum.setAntiGhostKaEnabled(settings_store->getAntiGhostKaEnabled());
         drum.setTriggerThresholds(settings_store->getTriggerThresholds());
         drum.setDoubleTriggerMode(settings_store->getDoubleTriggerMode());
         drum.setDoubleThresholds(settings_store->getDoubleTriggerThresholds());
