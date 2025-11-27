@@ -37,7 +37,6 @@ const std::map<Menu::Page, const Menu::Descriptor> Menu::descriptors = {
      {Menu::Descriptor::Type::Menu,                                              //
       "Drum Settings",                                                           //
       {{"Hold Time", Menu::Descriptor::Action::GotoPageDrumDebounceDelay},       //
-       {"Key Time", Menu::Descriptor::Action::GotoPageDrumKeyTimeout},           //
        {"Debounce", Menu::Descriptor::Action::GotoPageDrumDebounce},             //
        {"Anti-Ghost", Menu::Descriptor::Action::GotoPageDrumAntiGhosting},       //
        {"Thresholds", Menu::Descriptor::Action::GotoPageDrumTriggerThresholds},  //
@@ -77,15 +76,17 @@ const std::map<Menu::Page, const Menu::Descriptor> Menu::descriptors = {
 
     {Menu::Page::DrumKeyTimeout,                           //
      {Menu::Descriptor::Type::Value,                       //
-      "Key Timeout (ms)",                                  //
+      "Key Debounce (ms)",                                 //
       {{"", Menu::Descriptor::Action::SetDrumKeyTimeout}}, //
       UINT8_MAX}},
 
-    {Menu::Page::DrumDebounce,                                    //
-     {Menu::Descriptor::Type::Menu,                               //
-      "Debounce Settings",                                        //
-      {{"Don", Menu::Descriptor::Action::GotoPageDrumDonDebounce}, //
-       {"Ka", Menu::Descriptor::Action::GotoPageDrumKatDebounce}}, //
+    {Menu::Page::DrumDebounce,                                         //
+     {Menu::Descriptor::Type::Menu,                                    //
+      "Debounce Settings",                                             //
+      {{"Don", Menu::Descriptor::Action::GotoPageDrumDonDebounce},     //
+       {"Ka", Menu::Descriptor::Action::GotoPageDrumKatDebounce},      //
+       {"Crosstalk", Menu::Descriptor::Action::GotoPageDrumCrosstalkDebounce}, //
+       {"Key", Menu::Descriptor::Action::GotoPageDrumKeyTimeout}},     //
       0}},
 
     {Menu::Page::DrumDonDebounce,                           //
@@ -98,6 +99,12 @@ const std::map<Menu::Page, const Menu::Descriptor> Menu::descriptors = {
      {Menu::Descriptor::Type::Value,                        //
       "Ka Debounce (ms)",                                   //
       {{"", Menu::Descriptor::Action::SetDrumKatDebounce}}, //
+      UINT8_MAX}},
+
+    {Menu::Page::DrumCrosstalkDebounce,                           //
+     {Menu::Descriptor::Type::Value,                              //
+      "Crosstalk Debounce (ms)",                                  //
+      {{"", Menu::Descriptor::Action::SetDrumCrosstalkDebounce}}, //
       UINT8_MAX}},
 
     {Menu::Page::DrumAntiGhosting,                                    //
@@ -290,6 +297,8 @@ uint16_t Menu::getCurrentValue(Menu::Page page) {
         return m_store->getDonDebounceMs();
     case Page::DrumKatDebounce:
         return m_store->getKatDebounceMs();
+    case Page::DrumCrosstalkDebounce:
+        return m_store->getCrosstalkDebounceMs();
     case Page::DrumAntiGhostDon:
         return static_cast<uint16_t>(m_store->getAntiGhostDonEnabled());
     case Page::DrumAntiGhostKa:
@@ -361,6 +370,9 @@ void Menu::gotoParent(bool do_restore) {
             break;
         case Page::DrumKatDebounce:
             m_store->setKatDebounceMs(current_state.original_value);
+            break;
+        case Page::DrumCrosstalkDebounce:
+            m_store->setCrosstalkDebounceMs(current_state.original_value);
             break;
         case Page::DrumAntiGhostDon:
             m_store->setAntiGhostDonEnabled(static_cast<bool>(current_state.original_value));
@@ -490,6 +502,9 @@ void Menu::performAction(Descriptor::Action action, uint16_t value) {
     case Descriptor::Action::GotoPageDrumKatDebounce:
         gotoPage(Page::DrumKatDebounce);
         break;
+    case Descriptor::Action::GotoPageDrumCrosstalkDebounce:
+        gotoPage(Page::DrumCrosstalkDebounce);
+        break;
     case Descriptor::Action::GotoPageDrumAntiGhosting:
         gotoPage(Page::DrumAntiGhosting);
         break;
@@ -543,6 +558,9 @@ void Menu::performAction(Descriptor::Action action, uint16_t value) {
         break;
     case Descriptor::Action::SetDrumKatDebounce:
         m_store->setKatDebounceMs(value);
+        break;
+    case Descriptor::Action::SetDrumCrosstalkDebounce:
+        m_store->setCrosstalkDebounceMs(value);
         break;
     case Descriptor::Action::SetDrumAntiGhostDon:
         m_store->setAntiGhostDonEnabled(static_cast<bool>(value));

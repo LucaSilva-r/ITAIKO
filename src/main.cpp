@@ -177,6 +177,8 @@ int main() {
         drum.setDebounceDelay(settings_store->getDebounceDelay());
         drum.setDonDebounceMs(settings_store->getDonDebounceMs());
         drum.setKatDebounceMs(settings_store->getKatDebounceMs());
+
+        drum.setCrosstalkDebounceMs(settings_store->getCrosstalkDebounceMs());
         drum.setKeyTimeoutMs(settings_store->getKeyTimeoutMs());
         drum.setAntiGhostDonEnabled(settings_store->getAntiGhostDonEnabled());
         drum.setAntiGhostKaEnabled(settings_store->getAntiGhostKaEnabled());

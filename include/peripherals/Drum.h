@@ -59,6 +59,7 @@ class Drum {
         uint16_t debounce_delay_ms;
         uint16_t don_debounce;
         uint16_t kat_debounce;
+        uint16_t crosstalk_debounce;
 
         uint16_t key_timeout_ms;
 
@@ -185,6 +186,7 @@ class Drum {
     void setDebounceDelay(uint16_t delay);
     void setDonDebounceMs(uint16_t ms);
     void setKatDebounceMs(uint16_t ms);
+    void setCrosstalkDebounceMs(uint16_t ms);
     void setKeyTimeoutMs(uint16_t ms);
     void setAntiGhostDonEnabled(bool enabled);
     void setAntiGhostKaEnabled(bool enabled);

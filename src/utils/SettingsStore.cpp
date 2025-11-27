@@ -27,6 +27,7 @@ SettingsStore::SettingsStore()
                      .double_trigger_thresholds = Config::Default::drum_config.double_trigger_thresholds,
                      .don_debounce = Config::Default::drum_config.don_debounce,
                      .kat_debounce = Config::Default::drum_config.kat_debounce,
+                     .crosstalk_debounce = Config::Default::drum_config.crosstalk_debounce,
                      .key_timeout_ms = Config::Default::drum_config.key_timeout_ms,
                      .anti_ghost_don_enabled = Config::Default::drum_config.anti_ghost_don_enabled,
                      .anti_ghost_ka_enabled = Config::Default::drum_config.anti_ghost_ka_enabled,
@@ -135,6 +136,14 @@ void SettingsStore::setKatDebounceMs(const uint16_t ms) {
     }
 }
 uint16_t SettingsStore::getKatDebounceMs() const { return m_store_cache.kat_debounce; }
+
+void SettingsStore::setCrosstalkDebounceMs(const uint16_t ms) {
+    if (m_store_cache.crosstalk_debounce != ms) {
+        m_store_cache.crosstalk_debounce = ms;
+        m_dirty = true;
+    }
+}
+uint16_t SettingsStore::getCrosstalkDebounceMs() const { return m_store_cache.crosstalk_debounce; }
 
 void SettingsStore::setKeyTimeoutMs(const uint16_t ms) {
     if (m_store_cache.key_timeout_ms != ms) {

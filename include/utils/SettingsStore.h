@@ -29,6 +29,7 @@ class SettingsStore {
         Peripherals::Drum::Config::Thresholds double_trigger_thresholds;
         uint16_t don_debounce;
         uint16_t kat_debounce;
+        uint16_t crosstalk_debounce;
         uint16_t key_timeout_ms;
         bool anti_ghost_don_enabled;
         bool anti_ghost_ka_enabled;
@@ -37,7 +38,7 @@ class SettingsStore {
                                 sizeof(Peripherals::Drum::Config::Thresholds) - sizeof(uint8_t) - sizeof(bool) -
                                 sizeof(uint16_t) - sizeof(Peripherals::Drum::Config::DoubleTriggerMode) -
                                 sizeof(Peripherals::Drum::Config::Thresholds) - sizeof(uint16_t) - sizeof(uint16_t) -
-                                sizeof(uint16_t) - sizeof(bool) - sizeof(bool)>
+                                sizeof(uint16_t) - sizeof(uint16_t) - sizeof(bool) - sizeof(bool)>
             _padding;
     };
     static_assert(sizeof(Storecache) == m_store_size);
@@ -83,6 +84,9 @@ class SettingsStore {
 
     void setKatDebounceMs(uint16_t ms);
     [[nodiscard]] uint16_t getKatDebounceMs() const;
+
+    void setCrosstalkDebounceMs(uint16_t ms);
+    [[nodiscard]] uint16_t getCrosstalkDebounceMs() const;
 
     void setKeyTimeoutMs(uint16_t ms);
     [[nodiscard]] uint16_t getKeyTimeoutMs() const;
