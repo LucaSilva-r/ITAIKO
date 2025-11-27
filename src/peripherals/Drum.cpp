@@ -88,6 +88,8 @@ void Drum::Pad::trigger(const uint16_t key_timeout) {
 }
 
 void Drum::Pad::updateTimeout(const uint16_t key_timeout) {
+
+    
     if (!m_active) {
         return; // Not currently pressed
     }
@@ -271,58 +273,44 @@ void Drum::updateDigitalInputState(Utils::InputState &input_state, const std::ma
             continue;
         }
 
-        // Anti-ghosting check - blocks opposite pad type
-        // if (!isAntiGhostOk(id)) {
-        //     continue;
-        // }
-
-        // Per-sensor debounce check (hold time from last state change)
-        const uint32_t time_since_change = now - pad.getLastChange();
-        if (time_since_change < m_config.key_timeout_ms) {
+        // Per-sensor debounce check (individual pad retrigger delay)
+        const uint32_t time_since_trigger = now - pad.getLastTrigger();
+        if (time_since_trigger <= m_config.key_timeout_ms) {
             continue;
         }
 
+        // Check crosstalk between different pad types (Don-Ka)
         if (id == Id::DON_LEFT || id == Id::DON_RIGHT) {
-
-            if (now - last_kat_time < m_config.kat_debounce) {
+            // Don pads: check same-type debounce AND crosstalk
+            if (now - last_don_time < m_config.don_debounce ||
+                 now - last_kat_time <= m_config.crosstalk_debounce) {
                 continue;
-            } else {
-                last_don_time = now;
             }
-
         } else {
-
-            if (now - last_don_time < m_config.don_debounce) {
+            // Ka pads: check same-type debounce AND crosstalk
+            if (now - last_kat_time < m_config.kat_debounce ||
+                 now - last_don_time <= m_config.crosstalk_debounce) {
                 continue;
-            } else {
-                last_kat_time = now;
             }
         }
 
-        // Two trigger conditions (both respect key timeout above):
-        // 1. Light hit: requires global debounce to be clear
-        // 2. Heavy hit: bypasses global debounce (only if Threshold mode enabled)
-        //bool should_trigger = false;
+        // All checks passed - trigger the pad
+        m_pads.at(id).trigger(m_config.key_timeout_ms);
+        any_triggered = true;
 
-        // if (global_debounce_ok) {
-        //     // Light hit is OK
-        //     should_trigger = true;
-        // } else if (m_config.double_trigger_mode == Config::DoubleTriggerMode::Threshold &&
-        //            adc_value > heavy_threshold) {
-        //     // Heavy hit bypasses global debounce (only in Threshold mode)
-        //     should_trigger = true;
-        // }
-
-        // if (should_trigger) {
-            m_pads.at(id).trigger(m_config.key_timeout_ms);
-            any_triggered = true;
-        // }
+        // Update global timers AFTER successful trigger (matching aaaa.cpp)
+        if (id == Id::DON_LEFT || id == Id::DON_RIGHT) {
+            last_don_time = now;
+        } else {
+            last_kat_time = now;
+        }
     }
 
     // PHASE 3: Update global debounce if any hit occurred
     if (any_triggered) {
         updateGlobalDebounce();
-    }
+    }                               
+    
 
     // PHASE 5: Output to InputState
     input_state.drum.don_left.triggered = m_pads.at(Id::DON_LEFT).getState();
@@ -372,6 +360,8 @@ void Drum::setDebounceDelay(const uint16_t delay) { m_config.debounce_delay_ms =
 void Drum::setDonDebounceMs(const uint16_t ms) { m_config.don_debounce = ms; }
 
 void Drum::setKatDebounceMs(const uint16_t ms) { m_config.kat_debounce = ms; }
+
+void Drum::setCrosstalkDebounceMs(const uint16_t ms) { m_config.crosstalk_debounce = ms; }
 
 void Drum::setKeyTimeoutMs(const uint16_t ms) { m_config.key_timeout_ms = ms; }
 

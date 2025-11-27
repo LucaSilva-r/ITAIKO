@@ -20,7 +20,7 @@ struct I2c {
 
 namespace Default {
 
-const usb_mode_t usb_mode = USB_MODE_SWITCH_TATACON;
+const usb_mode_t usb_mode = USB_MODE_SWITCH_HORIPAD;
 
 const I2c i2c_config = {
     .sda_pin = 6,
@@ -32,10 +32,10 @@ const I2c i2c_config = {
 const Peripherals::Drum::Config drum_config = {
     .trigger_thresholds =
         {
-            .don_left = 350,
-            .ka_left = 450,
-            .don_right = 350,
-            .ka_right = 450,
+            .don_left = 100,
+            .ka_left = 100,
+            .don_right = 100,
+            .ka_right = 100,
         },
 
     .double_trigger_mode = Peripherals::Drum::Config::DoubleTriggerMode::Threshold,
@@ -48,10 +48,10 @@ const Peripherals::Drum::Config drum_config = {
         },
 
     .debounce_delay_ms = 25,
-    .don_debounce = 40,
-    .kat_debounce = 40,
-    .crosstalk_debounce = 40,
-    .key_timeout_ms = 40,
+    .don_debounce = 30,
+    .kat_debounce = 30,
+    .crosstalk_debounce = 30,
+    .key_timeout_ms = 19,
     .anti_ghost_don_enabled = true,
     .anti_ghost_ka_enabled = true,
     .roll_counter_timeout_ms = 500,
