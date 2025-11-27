@@ -276,6 +276,10 @@ class DrumMonitor(QMainWindow):
                 if not line:
                     continue
 
+                # Skip library error messages (e.g., "[ssd1306_write] addr not acknowledged!")
+                if line.startswith('['):
+                    continue
+
                 # Parse CSV format: T/F,raw,T/F,raw,T/F,raw,T/F,raw
                 parts = line.split(',')
 
