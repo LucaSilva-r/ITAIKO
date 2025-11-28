@@ -8,6 +8,7 @@
 #include "utils/InputState.h"
 #include "utils/Menu.h"
 #include "utils/PS4AuthProvider.h"
+#include "utils/SerialConfig.h"
 #include "utils/SettingsStore.h"
 
 #include "GlobalConfiguration.h"
@@ -186,6 +187,7 @@ int main() {
     };
 
     Utils::Menu menu(settings_store);
+    Utils::SerialConfig serial_config(*settings_store);
 
     std::array<uint8_t, Utils::PS4AuthProvider::SIGNATURE_LENGTH> auth_challenge_response{};
     if (Config::PS4Auth::config.enabled) {
@@ -235,6 +237,9 @@ int main() {
 
         usbd_driver_send_report(input_report.getReport(input_state, mode));
         usbd_driver_task();
+
+        // Process serial configuration commands
+        serial_config.processSerial();
 
         queue_try_add(&drum_input_queue, &drum_message);
 

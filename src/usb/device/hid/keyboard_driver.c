@@ -8,9 +8,9 @@ const tusb_desc_device_t keyboard_desc_device = {
     .bLength = sizeof(tusb_desc_device_t),
     .bDescriptorType = TUSB_DESC_DEVICE,
     .bcdUSB = 0x0200,
-    .bDeviceClass = TUSB_CLASS_UNSPECIFIED,
-    .bDeviceSubClass = 0x00,
-    .bDeviceProtocol = 0x00,
+    .bDeviceClass = TUSB_CLASS_MISC,        // Composite device
+    .bDeviceSubClass = MISC_SUBCLASS_COMMON,
+    .bDeviceProtocol = MISC_PROTOCOL_IAD,
     .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
     .idVendor = 0x1209,
     .idProduct = 0x3901,
@@ -22,8 +22,19 @@ const tusb_desc_device_t keyboard_desc_device = {
 };
 
 enum {
+    USBD_ITF_CDC,
+    USBD_ITF_CDC_DATA,
     USBD_ITF_HID,
     USBD_ITF_MAX,
+};
+
+enum {
+    USBD_CDC_EP_CMD = 0x81,
+    USBD_CDC_EP_OUT = 0x02,
+    USBD_CDC_EP_IN = 0x82,
+    USBD_HID_EP_IN = 0x83,
+    USBD_CDC_CMD_MAX_SIZE = 8,
+    USBD_CDC_IN_OUT_MAX_SIZE = 64,
 };
 
 const uint8_t keyboard_desc_hid_report[] = {
@@ -42,11 +53,13 @@ const uint8_t keyboard_desc_hid_report[] = {
     0xC0,             // End Collection
 };
 
-#define USBD_KEYBOARD_DESC_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN)
+#define USBD_KEYBOARD_DESC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_DESC_LEN)
 uint8_t const keyboard_desc_cfg[] = {
     TUD_CONFIG_DESCRIPTOR(0x01, USBD_ITF_MAX, USBD_STR_LANGUAGE, USBD_KEYBOARD_DESC_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, USBD_MAX_POWER_MAX),
-    TUD_HID_DESCRIPTOR(USBD_ITF_HID, 0, HID_ITF_PROTOCOL_KEYBOARD, sizeof(keyboard_desc_hid_report), 0x81,
+    TUD_CDC_DESCRIPTOR(USBD_ITF_CDC, 0, USBD_CDC_EP_CMD, USBD_CDC_CMD_MAX_SIZE, USBD_CDC_EP_OUT, USBD_CDC_EP_IN,
+                       USBD_CDC_IN_OUT_MAX_SIZE),
+    TUD_HID_DESCRIPTOR(USBD_ITF_HID, 0, HID_ITF_PROTOCOL_KEYBOARD, sizeof(keyboard_desc_hid_report), USBD_HID_EP_IN,
                        CFG_TUD_HID_EP_BUFSIZE, 1),
 };
 
