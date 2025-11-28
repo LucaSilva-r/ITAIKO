@@ -20,7 +20,7 @@ struct I2c {
 
 namespace Default {
 
-const usb_mode_t usb_mode = USB_MODE_SWITCH_HORIPAD;
+const usb_mode_t usb_mode = USB_MODE_KEYBOARD_P1;
 
 const I2c i2c_config = {
     .sda_pin = 6,
@@ -65,7 +65,7 @@ const Peripherals::Drum::Config drum_config = {
     // ADC Config, either InternalAdc or ExternalAdc
     .adc_config =
         Peripherals::Drum::Config::InternalAdc{
-            .sample_count = 16,
+            .sample_count = 1,
         },
 
     // .adc_config =
@@ -79,7 +79,7 @@ const Peripherals::Drum::Config drum_config = {
     //         .spi_level_shifter_enable_pin = 9,
     //     },
 };
-
+  
 const Peripherals::Controller::Config controller_config = {
     .pins =
         {

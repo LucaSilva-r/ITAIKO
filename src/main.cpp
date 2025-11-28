@@ -91,17 +91,12 @@ void core1_task() {
                     display.setPlayerId(control_msg.data.player_led.id);
                     break;
                 case USB_PLAYER_LED_COLOR:
-                    // led.setPlayerColor({.r = control_msg.data.player_led.red,
-                    //                     .g = control_msg.data.player_led.green,
-                    //                     .b = control_msg.data.player_led.blue});
                     break;
                 }
                 break;
             case ControlCommand::SetLedBrightness:
-                // led.setBrightness(control_msg.data.led_brightness);
                 break;
             case ControlCommand::SetLedEnablePlayerColor:
-                // led.setEnablePlayerColor(control_msg.data.led_enable_player_color);
                 break;
             case ControlCommand::EnterMenu:
                 display.showMenu();
@@ -240,6 +235,9 @@ int main() {
 
         // Process serial configuration commands
         serial_config.processSerial();
+
+        // Send sensor data if streaming is active
+        serial_config.sendSensorDataIfStreaming(input_state);
 
         queue_try_add(&drum_input_queue, &drum_message);
 
