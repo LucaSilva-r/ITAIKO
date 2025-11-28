@@ -4,3 +4,4 @@ build/
 research/
 
 *.pio.h
+hidtaiko src/
