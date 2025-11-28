@@ -459,13 +459,9 @@ class DrumMonitor(QMainWindow):
         read_btn.clicked.connect(self.read_config_from_device)
         button_layout.addWidget(read_btn)
 
-        write_btn = QPushButton("Write to Device")
+        write_btn = QPushButton("Write to Device && Save")
         write_btn.clicked.connect(self.write_config_to_device)
         button_layout.addWidget(write_btn)
-
-        save_btn = QPushButton("Save to Flash")
-        save_btn.clicked.connect(self.save_config_to_flash)
-        button_layout.addWidget(save_btn)
 
         reset_btn = QPushButton("Reset to Defaults")
         reset_btn.clicked.connect(self.reset_config_to_defaults)
@@ -793,7 +789,11 @@ class DrumMonitor(QMainWindow):
                 threshold_line.setValue(self.thresholds[i])
                 threshold_line.label.setFormat(f'Threshold: {self.thresholds[i]}')
 
-            self.statusBar().showMessage("Settings written to device (not saved to flash yet)")
+            # Automatically save to flash after writing
+            self.config_helper.save_to_flash()
+
+            self.statusBar().showMessage("Settings written to device and saved to flash memory")
+            QMessageBox.information(self, "Success", "Settings written to device and saved to flash memory")
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to write settings:\n{e}")

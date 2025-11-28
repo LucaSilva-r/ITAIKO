@@ -234,12 +234,15 @@ void Drum::updateDigitalInputState(Utils::InputState &input_state, const std::ma
         pad.updateTimeout(m_config.key_timeout_ms);
     }
 
-    for (const auto &[id, pad] : m_pads) {
-        // Skip if pad is already active (key timeout not expired - ABSOLUTE)
+    // Track if ANY Don pad triggers in this cycle (for priority over all Ka)
+    bool any_don_triggered_this_cycle = false;
+
+    // PHASE 2a: Process Don (face) pads FIRST - they get priority
+    for (const auto &id : {Id::DON_LEFT, Id::DON_RIGHT}) {
+        const auto &pad = m_pads.at(id);
 
         const int32_t adc_value = raw_values.at(id);
         const int32_t light_threshold = static_cast<int32_t>(getThreshold(id, m_config.trigger_thresholds));
-        //const int32_t heavy_threshold = static_cast<int32_t>(getThreshold(id, m_config.double_trigger_thresholds));
         const int32_t last_adc_value = pad.getLastAdcValue();
 
         m_pads.at(id).setLastAdcValue(adc_value);
@@ -258,30 +261,58 @@ void Drum::updateDigitalInputState(Utils::InputState &input_state, const std::ma
         if (time_since_trigger <= m_config.key_timeout_ms) {
             continue;
         }
-        // Check crosstalk between different pad types (Don-Ka)
-        if (id == Id::DON_LEFT || id == Id::DON_RIGHT) {
-            // Don pads: check same-type debounce AND crosstalk
-            if (now - last_don_time < m_config.don_debounce ||
-                 now - last_kat_time <= m_config.crosstalk_debounce) {
-                continue;
-            }
-        } else {
-            // Ka pads: check same-type debounce AND crosstalk
-            if (now - last_kat_time < m_config.kat_debounce ||
-                 now - last_don_time <= m_config.crosstalk_debounce) {
-                continue;
-            }
+
+        // Don pads: check same-type debounce AND crosstalk
+        if (now - last_don_time < m_config.don_debounce ||
+             now - last_kat_time <= m_config.crosstalk_debounce) {
+            continue;
         }
 
-        // All checks passed - trigger the pad
+        // All checks passed - trigger the Don pad
         m_pads.at(id).trigger(m_config.key_timeout_ms);
-
-        // Update global timers AFTER successful trigger (matching aaaa.cpp)
-        if (id == Id::DON_LEFT || id == Id::DON_RIGHT) {
-            last_don_time = now;
-        } else {
-        last_kat_time = now;
+        last_don_time = now;
+        any_don_triggered_this_cycle = true; // Any Don trigger blocks all Ka
     }
+
+    // PHASE 2b: Process Ka (rim) pads SECOND - they are suppressed if ANY Don triggered
+    for (const auto &id : {Id::KA_LEFT, Id::KA_RIGHT}) {
+        const auto &pad = m_pads.at(id);
+
+        const int32_t adc_value = raw_values.at(id);
+        const int32_t light_threshold = static_cast<int32_t>(getThreshold(id, m_config.trigger_thresholds));
+        const int32_t last_adc_value = pad.getLastAdcValue();
+
+        m_pads.at(id).setLastAdcValue(adc_value);
+
+        if (pad.getState()) {
+            continue;
+        }
+
+        // Check if above light threshold (signed arithmetic prevents underflow)
+        if (adc_value - last_adc_value <= light_threshold) {
+            continue;
+        }
+
+        // Per-sensor debounce check (individual pad retrigger delay)
+        const uint32_t time_since_trigger = now - pad.getLastTrigger();
+        if (time_since_trigger <= m_config.key_timeout_ms) {
+            continue;
+        }
+
+        // Ka pads: check same-type debounce AND crosstalk
+        if (now - last_kat_time < m_config.kat_debounce ||
+             now - last_don_time <= m_config.crosstalk_debounce) {
+            continue;
+        }
+
+        // PRIORITY CHECK: If ANY Don pad triggered this cycle, suppress all Ka
+        if (any_don_triggered_this_cycle) {
+            continue; // Don has priority - suppress all Ka triggers
+        }
+
+        // All checks passed - trigger the Ka pad
+        m_pads.at(id).trigger(m_config.key_timeout_ms);
+        last_kat_time = now;
     }                          
 
 
