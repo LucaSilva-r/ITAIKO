@@ -225,13 +225,18 @@ class DrumMonitor(QMainWindow):
         self.config_widgets = {}
 
         self.time_counter = 0
+        self.plot_update_counter = 0
 
         self.init_ui()
         self.setup_plots()
 
-        # Timer for reading serial data
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_data)
+        # Fast timer for reading serial data and updating visual drum (10ms)
+        self.data_timer = QTimer()
+        self.data_timer.timeout.connect(self.update_data)
+
+        # Separate slower timer for plot updates (configurable)
+        self.plot_timer = QTimer()
+        self.plot_timer.timeout.connect(self.update_plots)
 
     def init_ui(self):
         """Initialize the user interface"""
@@ -322,12 +327,13 @@ class DrumMonitor(QMainWindow):
         group = QGroupBox("Monitor Controls")
         layout = QHBoxLayout()
 
-        # Update rate control
-        layout.addWidget(QLabel("Update Rate (ms):"))
+        # Update rate control (only affects plots, not visual drum)
+        layout.addWidget(QLabel("Plot Refresh (ms):"))
         self.update_rate_spin = QSpinBox()
-        self.update_rate_spin.setRange(1, 1000)
-        self.update_rate_spin.setValue(10)
-        self.update_rate_spin.setToolTip("Update interval in milliseconds (lower = faster)")
+        self.update_rate_spin.setRange(10, 1000)
+        self.update_rate_spin.setValue(50)
+        self.update_rate_spin.valueChanged.connect(self.on_plot_rate_changed)
+        self.update_rate_spin.setToolTip("How often graphs refresh (higher = smoother, visual drum always fast)")
         layout.addWidget(self.update_rate_spin)
 
         # Buffer size control
@@ -563,9 +569,12 @@ class DrumMonitor(QMainWindow):
                 self.config_helper.start_streaming()
                 self.is_streaming = True
 
-            # Start the update timer
-            update_rate = self.update_rate_spin.value()
-            self.timer.start(update_rate)
+            # Start fast data timer (always 10ms for responsiveness)
+            self.data_timer.start(10)
+
+            # Start plot update timer (user configurable, default 10ms)
+            plot_rate = self.update_rate_spin.value()
+            self.plot_timer.start(plot_rate)
 
             self.statusBar().showMessage(f"Connected to {port}")
 
@@ -587,7 +596,8 @@ class DrumMonitor(QMainWindow):
             self.is_streaming = False
 
         self.is_running = False
-        self.timer.stop()
+        self.data_timer.stop()
+        self.plot_timer.stop()
 
         if self.serial_port:
             self.serial_port.close()
@@ -706,14 +716,15 @@ class DrumMonitor(QMainWindow):
                         *[f"{parts[i]},{parts[i+1]}" for i in range(0, 8, 2)]
                     ])
 
-            # Update plots
-            self.update_plots()
-
         except serial.SerialException as e:
             self.disconnect()
 
     def update_plots(self):
         """Update all plot curves with current data"""
+        # Only update if on Live Monitor tab (performance optimization)
+        if self.tab_widget.currentIndex() != 0:
+            return
+
         if len(self.time_data) == 0:
             return
 
