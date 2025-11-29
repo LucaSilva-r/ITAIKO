@@ -67,7 +67,7 @@ const Peripherals::Drum::Config drum_config = {
     // ADC Config, either InternalAdc or ExternalAdc
     .adc_config =
         Peripherals::Drum::Config::InternalAdc{
-            .sample_count = 1,
+            .sample_count = 16,
         },
 
     // .adc_config =
