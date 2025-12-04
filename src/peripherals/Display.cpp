@@ -88,6 +88,16 @@ void Display::drawIdleScreen() {
     ssd1306_draw_string(&m_display, 0, 56, 1, "Hold STA+SEL for Menu");
 }
 
+
+void Display::drawSplashScreen() {
+    // Non-blocking splash screen - just draw it once and record the time
+    ssd1306_clear(&m_display);
+    ssd1306_bmp_show_image(&m_display, splash_screen.data(), splash_screen.size());
+    ssd1306_show(&m_display);
+    m_splash_start_time = to_ms_since_boot(get_absolute_time());
+    m_state = State::Splash;
+}
+
 void Display::drawMenuScreen() {
     auto descriptor_it = Utils::Menu::descriptors.find(m_menu_state.page);
     if (descriptor_it == Utils::Menu::descriptors.end()) {
@@ -156,6 +166,16 @@ void Display::drawMenuScreen() {
 
 void Display::update() {
     static const uint32_t interval_ms = 17; // Limit to ~60fps
+    static const uint32_t splash_duration_ms = 2000; // Show splash for 2 seconds
+
+    // Handle splash screen timeout
+    if (m_state == State::Splash) {
+        if (to_ms_since_boot(get_absolute_time()) - m_splash_start_time >= splash_duration_ms) {
+            m_state = State::Idle; // Transition to idle after splash duration
+        } else {
+            return; // Keep showing splash screen, don't update
+        }
+    }
 
     if (to_ms_since_boot(get_absolute_time()) - m_next_frame_time < interval_ms) {
         return;
@@ -165,6 +185,9 @@ void Display::update() {
     ssd1306_clear(&m_display);
 
     switch (m_state) {
+    case State::Splash:
+        // Should never reach here due to check above, but handle gracefully
+        break;
     case State::Idle:
         drawIdleScreen();
         break;

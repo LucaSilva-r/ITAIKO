@@ -22,12 +22,13 @@ class Display {
 
   private:
     enum class State : uint8_t {
+        Splash,
         Idle,
         Menu,
     };
 
     Config m_config;
-    State m_state{State::Idle};
+    State m_state{State::Splash};
 
     Utils::InputState m_input_state;
     usb_mode_t m_usb_mode{USB_MODE_DEBUG};
@@ -37,10 +38,11 @@ class Display {
 
     ssd1306_t m_display{};
     uint32_t m_next_frame_time{0};
+    uint32_t m_splash_start_time{0};
 
     void drawIdleScreen();
     void drawMenuScreen();
-
+    
   public:
     Display(const Config &config);
 
@@ -54,6 +56,7 @@ class Display {
     void showMenu();
 
     void update();
+    void drawSplashScreen();
 };
 
 } // namespace Doncon::Peripherals

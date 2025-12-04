@@ -74,6 +74,8 @@ void core1_task() {
     Utils::Menu::State menu_display_msg{};
     ControlMessage control_msg{};
 
+    display.drawSplashScreen();
+
     while (true) {
         controller.updateInputState(input_state);
 
