@@ -6,3 +6,4 @@ research/
 *.pio.h
 hidtaiko src/
 debug/debug.rar
+dist
