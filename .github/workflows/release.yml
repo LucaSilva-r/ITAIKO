@@ -137,11 +137,13 @@ jobs:
             --tag v${{ github.event.inputs.version }} \
             --token ${{ secrets.GITHUB_TOKEN }} \
             -o all-releases \
-            --channel osx
+            --channel osx \
+            --merge
           
           vpk upload github \
             --repoUrl https://github.com/${{ github.repository }} \
             --tag v${{ github.event.inputs.version }} \
             --token ${{ secrets.GITHUB_TOKEN }} \
             -o all-releases \
-            --channel linux
+            --channel linux \
+            --merge
