@@ -74,6 +74,7 @@ void SerialConfig::handleCommand(int command_value) {
 
     case Command::RebootToBootsel:
         m_settings_store.scheduleReboot(true);
+        m_settings_store.store();
         break;
 
     case Command::StartStreaming:
