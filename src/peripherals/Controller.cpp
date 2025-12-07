@@ -92,7 +92,7 @@ Controller::Controller(const Config &config) : m_config(config) {
             } else if constexpr (std::is_same_v<T, Config::ExternalGpio>) {
                 m_gpio = std::make_unique<ExternalGpio>(config);
             } else {
-                static_assert(false, "Unknown GPIO type!");
+                static_assert(!sizeof(T), "Unknown GPIO type!");
             }
         },
         m_config.gpio_config);
