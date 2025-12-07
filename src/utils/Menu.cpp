@@ -13,8 +13,15 @@ const std::map<Menu::Page, const Menu::Descriptor> Menu::descriptors = {
        {"Drum", Menu::Descriptor::Action::GotoPageDrum},          //
        {"Led", Menu::Descriptor::Action::GotoPageLed},            //
        {"Reset", Menu::Descriptor::Action::GotoPageReset},        //
-       {"USB Flash", Menu::Descriptor::Action::GotoPageBootsel}}, //
+       {"USB Flash", Menu::Descriptor::Action::GotoPageBootsel},  //
+       {"Version", Menu::Descriptor::Action::GotoPageVersion}},   //
       0}},                                                        //
+
+    {Menu::Page::Version,                            //
+     {Menu::Descriptor::Type::Info,                  //
+      "Firmware Version",                            //
+      {{FIRMWARE_VERSION, Menu::Descriptor::Action::None}}, //
+      0}},                                           //
 
     {Menu::Page::DeviceMode,                                 //
      {Menu::Descriptor::Type::Selection,                     //
@@ -353,6 +360,7 @@ uint16_t Menu::getCurrentValue(Menu::Page page) {
     case Page::Reset:
     case Page::Bootsel:
     case Page::BootselMsg:
+    case Page::Version:
         break;
     }
 
@@ -484,6 +492,7 @@ void Menu::gotoParent(bool do_restore) {
         case Page::Reset:
         case Page::Bootsel:
         case Page::BootselMsg:
+        case Page::Version:
             break;
         }
     }
@@ -525,6 +534,9 @@ void Menu::performAction(Descriptor::Action action, uint16_t value) {
         break;
     case Descriptor::Action::GotoPageBootsel:
         gotoPage(Page::Bootsel);
+        break;
+    case Descriptor::Action::GotoPageVersion:
+        gotoPage(Page::Version);
         break;
     case Descriptor::Action::GotoPageDrumDebounceDelay:
         gotoPage(Page::DrumDebounceDelay);
@@ -733,6 +745,7 @@ void Menu::update(const InputState::Controller &controller_state) {
             break;
         case Descriptor::Type::Value:
         case Descriptor::Type::RebootInfo:
+        case Descriptor::Type::Info:
             break;
         }
     } else if (m_buttons.getPressed(Buttons::Id::Right)) {
@@ -759,6 +772,7 @@ void Menu::update(const InputState::Controller &controller_state) {
             break;
         case Descriptor::Type::Value:
         case Descriptor::Type::RebootInfo:
+        case Descriptor::Type::Info:
             break;
         }
     } else if (m_buttons.getPressed(Buttons::Id::Up)) {
@@ -773,6 +787,7 @@ void Menu::update(const InputState::Controller &controller_state) {
         case Descriptor::Type::Selection:
         case Descriptor::Type::Menu:
         case Descriptor::Type::RebootInfo:
+        case Descriptor::Type::Info:
             break;
         }
     } else if (m_buttons.getPressed(Buttons::Id::Down)) {
@@ -787,6 +802,7 @@ void Menu::update(const InputState::Controller &controller_state) {
         case Descriptor::Type::Selection:
         case Descriptor::Type::Menu:
         case Descriptor::Type::RebootInfo:
+        case Descriptor::Type::Info:
             break;
         }
     } else if (m_buttons.getPressed(Buttons::Id::Back)) {
@@ -797,6 +813,7 @@ void Menu::update(const InputState::Controller &controller_state) {
             gotoParent(true);
             break;
         case Descriptor::Type::Menu:
+        case Descriptor::Type::Info:
             gotoParent(false);
             break;
         case Descriptor::Type::RebootInfo:
@@ -814,6 +831,7 @@ void Menu::update(const InputState::Controller &controller_state) {
                           current_state.selected_value);
             break;
         case Descriptor::Type::RebootInfo:
+        case Descriptor::Type::Info:
             break;
         }
     }

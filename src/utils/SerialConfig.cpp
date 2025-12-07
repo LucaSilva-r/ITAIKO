@@ -131,6 +131,8 @@ void SerialConfig::sendAllSettings() {
         stdio_flush();
         sleep_us(5000); // Small delay between values
     }
+    printf("Version:%s\n", FIRMWARE_VERSION);
+    stdio_flush();
 }
 
 uint16_t SerialConfig::getSettingByKey(int key) {

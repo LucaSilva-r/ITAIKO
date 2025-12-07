@@ -34,6 +34,13 @@ pico_sdk_init()
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 20)
 
+if(NOT DEFINED ENV{FIRMWARE_VERSION})
+    set(FIRMWARE_VERSION "0.0.0")
+else()
+    set(FIRMWARE_VERSION $ENV{FIRMWARE_VERSION})
+endif()
+add_compile_definitions(FIRMWARE_VERSION=\"${FIRMWARE_VERSION}\")
+
 add_compile_options(-Wall -Wextra -Werror)
 
 add_subdirectory(libs)

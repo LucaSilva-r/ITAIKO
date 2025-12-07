@@ -118,6 +118,7 @@ void Display::drawMenuScreen() {
         break;
     case Utils::Menu::Descriptor::Type::Selection:
     case Utils::Menu::Descriptor::Type::Toggle:
+    case Utils::Menu::Descriptor::Type::Info:
         ssd1306_bmp_show_image(&m_display, menu_screen_sub.data(), menu_screen_sub.size());
         break;
     case Utils::Menu::Descriptor::Type::RebootInfo:
@@ -133,6 +134,7 @@ void Display::drawMenuScreen() {
     case Utils::Menu::Descriptor::Type::Menu:
     case Utils::Menu::Descriptor::Type::Selection:
     case Utils::Menu::Descriptor::Type::RebootInfo:
+    case Utils::Menu::Descriptor::Type::Info:
         selection = descriptor_it->second.items.at(m_menu_state.selected_value).first;
         break;
     case Utils::Menu::Descriptor::Type::Value:
@@ -158,6 +160,7 @@ void Display::drawMenuScreen() {
         }
     } break;
     case Utils::Menu::Descriptor::Type::RebootInfo:
+    case Utils::Menu::Descriptor::Type::Info:
     case Utils::Menu::Descriptor::Type::Value:
     case Utils::Menu::Descriptor::Type::Toggle:
         break;

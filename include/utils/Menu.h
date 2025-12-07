@@ -53,6 +53,8 @@ class Menu {
         LedBrightness,
         LedEnablePlayerColor,
 
+        Version,
+
         BootselMsg,
     };
 
@@ -69,6 +71,7 @@ class Menu {
             Value,
             Toggle,
             RebootInfo,
+            Info,
         };
 
         enum class Action : uint8_t {
@@ -109,6 +112,8 @@ class Menu {
 
             GotoPageLedBrightness,
             GotoPageLedEnablePlayerColor,
+
+            GotoPageVersion,
 
             SetUsbMode,
 
