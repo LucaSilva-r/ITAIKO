@@ -22,6 +22,7 @@ namespace Doncon::Utils {
  * - Send "1001" to save settings to flash
  * - Send "1002" to enter write mode
  * - Send "1003" to reload settings from flash
+ * - Send "1004" to reboot to BOOTSEL mode
  * - Send "2000" to start streaming sensor data (CSV format)
  * - Send "2001" to stop streaming sensor data
  * - In write mode, send "key:value" pairs (e.g., "0:800")
@@ -31,11 +32,11 @@ namespace Doncon::Utils {
  * 1: Ka Left Threshold (Left rim sensitivity)
  * 2: Don Right Threshold (Right face sensitivity)
  * 3: Ka Right Threshold (Right rim sensitivity)
- * 4: Don Debounce - B delay (Next input time after face hit)
- * 5: Kat Debounce - C delay (Rim input acceptance time)
- * 6: Crosstalk Debounce - D delay (Time to ignore rim after face)
- * 7: Key Timeout - H delay (Input limit for simulators)
- * 8: Debounce Delay - A delay (Key hold time)
+ * 4: Don Debounce (Don-to-Don lockout time)
+ * 5: Ka Debounce (Ka-to-Ka lockout time)
+ * 6: Crosstalk Debounce (Don-to-Ka lockout time)
+ * 7: Key Release Timeout (Key press duration sent to PC)
+ * 8: Individual key debounce (Global signal hold time)
  *
  * Extended Keys (DonCon2040-specific, not in hidtaiko):
  * 9: Double Trigger Mode (0=Off, 1=Threshold)
@@ -43,6 +44,13 @@ namespace Doncon::Utils {
  * 11: Double Trigger Ka Left Threshold
  * 12: Double Trigger Don Right Threshold
  * 13: Double Trigger Ka Right Threshold
+ * 14: Cutoff Don Left Threshold
+ * 15: Cutoff Ka Left Threshold
+ * 16: Cutoff Don Right Threshold
+ * 17: Cutoff Ka Right Threshold
+ *
+ * Special Output:
+ * Version:Firmware Version String (e.g. "Version:0.0.0")
  */
 class SerialConfig {
   public:
@@ -88,6 +96,7 @@ class SerialConfig {
         SaveToFlash = 1001,
         EnterWriteMode = 1002,
         ReloadFromFlash = 1003,
+        RebootToBootsel = 1004,
         StartStreaming = 2000,
         StopStreaming = 2001,
     };
