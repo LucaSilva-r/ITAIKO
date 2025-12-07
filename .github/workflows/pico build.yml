@@ -22,7 +22,7 @@ jobs:
               uses: samyarsadat/Pico-Build-Action@v1
               with:
                   source_dir: "."
-                  cmake_args: "-DCMAKE_BUILD_TYPE=Debug"
+                  cmake_args: "-DCMAKE_BUILD_TYPE=Release"
 
             - name: Upload Build Artifacts
               uses: actions/upload-artifact@v4
