@@ -22,7 +22,7 @@ jobs:
               uses: samyarsadat/Pico-Build-Action@v1
               with:
                   source_dir: "."
-                  cmake_args: "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+                  cmake_args: "-DCMAKE_BUILD_TYPE=Debug -DPICO_SDK_FETCH_FROM_GIT_TAG=2.2.0"
 
             - name: Upload Build Artifacts
               uses: actions/upload-artifact@v4
