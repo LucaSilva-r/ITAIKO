@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Build and Release
 
 on:
   push:
@@ -6,49 +6,93 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
-    test_build:
-        name: Build ITAIKO Firmware
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
+  build_and_release:
+    name: Build and Release Firmware
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout Repository
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for semantic-release to analyze commits
 
-            - name: Install ARM GCC Toolchain
-              run: |
-                sudo apt-get update
-                sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
-                arm-none-eabi-gcc --version
+      - name: Install ARM GCC Toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+          arm-none-eabi-gcc --version
 
-            - name: Checkout Pico SDK
-              uses: actions/checkout@v4
-              with:
-                  repository: raspberrypi/pico-sdk
-                  ref: 2.2.0
-                  path: pico-sdk
-                  submodules: recursive
+      - name: Checkout Pico SDK
+        uses: actions/checkout@v4
+        with:
+            repository: raspberrypi/pico-sdk
+            ref: 2.2.0
+            path: pico-sdk
+            submodules: recursive
 
-            - name: Build Firmware
-              run: |
-                mkdir -p build
-                cd build
-                cmake .. \
-                  -DCMAKE_BUILD_TYPE=Release \
-                  -DPICO_SDK_PATH=${{ github.workspace }}/pico-sdk \
-                  -DPICO_BOARD=waveshare_rp2040_zero
-                make -j$(nproc)
-                echo "=== Build Output Sizes ==="
-                ls -lh *.uf2 *.elf 2>/dev/null || true
+      - name: Node.js Setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
 
-            - name: Upload Build Artifacts
-              uses: actions/upload-artifact@v4
-              with:
-                  name: ITAIKO-firmware
-                  path: |
-                    build/*.uf2
-                    build/*.elf
-                    build/*.bin
-                    build/*.hex
+      - name: Semantic Release (Dry Run)
+        id: semantic
+        # Only runs on push to main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          dry_run: true
+          extra_plugins: |
+            @semantic-release/commit-analyzer
+            @semantic-release/release-notes-generator
+            @semantic-release/github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine Firmware Version
+        id: determine_version
+        run: |
+          if [ "${{ steps.semantic.outputs.new_release_published }}" == "true" ]; then
+            echo "VERSION=${{ steps.semantic.outputs.new_release_version }}" >> $GITHUB_OUTPUT
+            echo "Firmware Version: ${{ steps.semantic.outputs.new_release_version }}"
+          else
+            # Fallback for non-release builds or PRs
+            echo "VERSION=0.0.0-dev.${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "Firmware Version: 0.0.0-dev.${{ github.run_number }}"
+          fi
+
+      - name: Build Firmware
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPICO_SDK_PATH=${{ github.workspace }}/pico-sdk \
+            -DPICO_BOARD=waveshare_rp2040_zero
+          make -j$(nproc)
+        env:
+          FIRMWARE_VERSION: ${{ steps.determine_version.outputs.VERSION }}
+
+      - name: Build Output Info
+        run: |
+          echo "=== Build Output Sizes ==="
+          ls -lh build/*.uf2 build/*.elf 2>/dev/null || true
+
+      - name: Semantic Release (Publish)
+        # Only runs if dry run predicted a release
+        if: steps.semantic.outputs.new_release_published == 'true'
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          dry_run: false
+          extra_plugins: |
+            @semantic-release/commit-analyzer
+            @semantic-release/release-notes-generator
+            @semantic-release/github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
