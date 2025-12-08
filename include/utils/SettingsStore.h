@@ -37,6 +37,7 @@ class SettingsStore {
         DrumKeys drum_keys_p1;
         DrumKeys drum_keys_p2;
         ControllerKeys controller_keys;
+        Peripherals::Drum::Config::AdcChannels adc_channels;
 
         std::array<uint8_t, m_store_size - sizeof(uint8_t) - sizeof(usb_mode_t) -
                                 sizeof(Peripherals::Drum::Config::Thresholds) - sizeof(uint8_t) - sizeof(bool) -
@@ -45,7 +46,8 @@ class SettingsStore {
                                 sizeof(uint16_t) - sizeof(uint16_t) -
                                 sizeof(Peripherals::Drum::Config::WeightedComparisonMode) -
                                 sizeof(DrumKeys) - sizeof(DrumKeys) - sizeof(ControllerKeys) -
-                                sizeof(Peripherals::Drum::Config::Thresholds)>
+                                sizeof(Peripherals::Drum::Config::Thresholds) -
+                                sizeof(Peripherals::Drum::Config::AdcChannels)>
             _padding;
     };
     static_assert(sizeof(Storecache) == m_store_size);
@@ -112,6 +114,9 @@ class SettingsStore {
 
     void setControllerKeys(const ControllerKeys &keys);
     [[nodiscard]] ControllerKeys getControllerKeys() const;
+
+    void setAdcChannels(const Peripherals::Drum::Config::AdcChannels &channels);
+    [[nodiscard]] Peripherals::Drum::Config::AdcChannels getAdcChannels() const;
 
     void scheduleReboot(bool bootsel = false);
 
