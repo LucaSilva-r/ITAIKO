@@ -139,7 +139,6 @@ int main() {
 
     Peripherals::Drum drum(Config::Default::drum_config);
 
-    Utils::InputReport input_report;
     Utils::InputState input_state;
     const auto checkHotkey = [&input_state]() {
         static const uint32_t hold_timeout = 2000;
@@ -162,6 +161,8 @@ int main() {
     };
 
     auto settings_store = std::make_shared<Utils::SettingsStore>();
+    Utils::InputReport input_report(settings_store);
+
     const auto mode = settings_store->getUsbMode();
     const auto readSettings = [&]() {
         const auto sendCtrlMessage = [&](const ControlMessage &msg) { queue_add_blocking(&control_queue, &msg); };

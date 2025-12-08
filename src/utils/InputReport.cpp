@@ -1,4 +1,5 @@
 #include "utils/InputReport.h"
+#include "utils/SettingsStore.h"
 
 #include <iomanip>
 #include <sstream>
@@ -37,6 +38,8 @@ uint8_t getHidHat(const InputState::Controller::DPad dpad) {
 }
 
 } // namespace
+
+InputReport::InputReport(std::shared_ptr<SettingsStore> settings_store) : m_settings_store(std::move(settings_store)) {}
 
 usb_report_t InputReport::getSwitchReport(const InputState &state) {
     const auto &controller = state.controller;
@@ -138,39 +141,43 @@ usb_report_t InputReport::getKeyboardReport(const InputState &state, InputReport
             m_keyboard_report.keycodes[keycode / 8] |= 1 << (keycode % 8);
         }
     };
-
-    switch (player) {
-    case Player::One: {
-        set_key(drum.ka_left.triggered, HID_KEY_D);
-        set_key(drum.don_left.triggered, HID_KEY_F);
-        set_key(drum.don_right.triggered, HID_KEY_J);
-        set_key(drum.ka_right.triggered, HID_KEY_K);
-    } break;
-    case Player::Two: {
-        set_key(drum.ka_left.triggered, HID_KEY_C);
-        set_key(drum.don_left.triggered, HID_KEY_B);
-        set_key(drum.don_right.triggered, HID_KEY_N);
-        set_key(drum.ka_right.triggered, HID_KEY_COMMA);
-    } break;
+    
+    DrumKeys drum_keys;
+    if (player == Player::One) {
+        drum_keys = m_settings_store->getDrumKeysP1();
+    } else {
+        drum_keys = m_settings_store->getDrumKeysP2();
     }
+    const ControllerKeys ctrl_keys = m_settings_store->getControllerKeys();
 
-    set_key(controller.dpad.up, HID_KEY_ARROW_UP);
-    set_key(controller.dpad.down, HID_KEY_ARROW_DOWN);
-    set_key(controller.dpad.left, HID_KEY_ARROW_LEFT);
-    set_key(controller.dpad.right, HID_KEY_ARROW_RIGHT);
+    set_key(drum.ka_left.triggered, drum_keys.ka_left);
+    set_key(drum.don_left.triggered, drum_keys.don_left);
+    set_key(drum.don_right.triggered, drum_keys.don_right);
+    set_key(drum.ka_right.triggered, drum_keys.ka_right);
 
-    set_key(controller.buttons.north, HID_KEY_L);
-    set_key(controller.buttons.east, HID_KEY_BACKSPACE);
-    set_key(controller.buttons.south, HID_KEY_ENTER);
-    set_key(controller.buttons.west, HID_KEY_P);
+    set_key(controller.dpad.up, ctrl_keys.up);
+    set_key(controller.dpad.down, ctrl_keys.down);
+    set_key(controller.dpad.left, ctrl_keys.left);
+    set_key(controller.dpad.right, ctrl_keys.right);
 
-    set_key(controller.buttons.l, HID_KEY_Q);
-    set_key(controller.buttons.r, HID_KEY_E);
+    set_key(controller.buttons.north, ctrl_keys.north);
+    set_key(controller.buttons.east, ctrl_keys.east);
+    set_key(controller.buttons.south, ctrl_keys.south);
+    set_key(controller.buttons.west, ctrl_keys.west);
 
-    set_key(controller.buttons.start, HID_KEY_ESCAPE);
-    set_key(controller.buttons.select, HID_KEY_TAB);
-    // set_key(controller.buttons.home, );
-    // set_key(controller.buttons.share, );
+    set_key(controller.buttons.l, ctrl_keys.l);
+    set_key(controller.buttons.r, ctrl_keys.r);
+
+    set_key(controller.buttons.start, ctrl_keys.start);
+    set_key(controller.buttons.select, ctrl_keys.select);
+    set_key(controller.buttons.home, ctrl_keys.home);
+    set_key(controller.buttons.share, ctrl_keys.share);
+    
+    // L3/R3 if we have input state for them (controller struct might not have explicit L3/R3 bools, let's check InputState)
+    // InputState::Controller has buttons which seem to map to physical pins.
+    // If controller has no L3/R3 pins, we can't map them.
+    // Let's assume standard controller buttons for now.
+    // The previous code didn't map L3/R3 for keyboard.
 
     return {reinterpret_cast<uint8_t *>(&m_keyboard_report), sizeof(hid_nkro_keyboard_report_t)};
 }

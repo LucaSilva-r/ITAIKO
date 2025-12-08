@@ -3,6 +3,7 @@
 
 #include "peripherals/Drum.h"
 #include "usb/device_driver.h"
+#include "utils/KeyboardMappings.h"
 
 #include "hardware/flash.h"
 
@@ -33,6 +34,9 @@ class SettingsStore {
         uint16_t crosstalk_debounce;
         uint16_t key_timeout_ms;
         Peripherals::Drum::Config::WeightedComparisonMode weighted_comparison_mode;
+        DrumKeys drum_keys_p1;
+        DrumKeys drum_keys_p2;
+        ControllerKeys controller_keys;
 
         std::array<uint8_t, m_store_size - sizeof(uint8_t) - sizeof(usb_mode_t) -
                                 sizeof(Peripherals::Drum::Config::Thresholds) - sizeof(uint8_t) - sizeof(bool) -
@@ -40,6 +44,7 @@ class SettingsStore {
                                 sizeof(Peripherals::Drum::Config::Thresholds) - sizeof(uint16_t) - sizeof(uint16_t) -
                                 sizeof(uint16_t) - sizeof(uint16_t) -
                                 sizeof(Peripherals::Drum::Config::WeightedComparisonMode) -
+                                sizeof(DrumKeys) - sizeof(DrumKeys) - sizeof(ControllerKeys) -
                                 sizeof(Peripherals::Drum::Config::Thresholds)>
             _padding;
     };
@@ -98,6 +103,15 @@ class SettingsStore {
 
     void setWeightedComparisonMode(const Peripherals::Drum::Config::WeightedComparisonMode &mode);
     [[nodiscard]] Peripherals::Drum::Config::WeightedComparisonMode getWeightedComparisonMode() const;
+
+    void setDrumKeysP1(const DrumKeys &keys);
+    [[nodiscard]] DrumKeys getDrumKeysP1() const;
+
+    void setDrumKeysP2(const DrumKeys &keys);
+    [[nodiscard]] DrumKeys getDrumKeysP2() const;
+
+    void setControllerKeys(const ControllerKeys &keys);
+    [[nodiscard]] ControllerKeys getControllerKeys() const;
 
     void scheduleReboot(bool bootsel = false);
 

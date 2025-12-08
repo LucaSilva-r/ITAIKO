@@ -12,9 +12,12 @@
 #include "usb/device_driver.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 namespace Doncon::Utils {
+
+class SettingsStore;
 
 struct InputReport {
   private:
@@ -22,6 +25,8 @@ struct InputReport {
         One,
         Two,
     };
+    
+    std::shared_ptr<SettingsStore> m_settings_store;
 
     hid_switch_report_t m_switch_report{
         .buttons = 0x00,
@@ -122,7 +127,7 @@ struct InputReport {
     usb_report_t getDebugReport(const InputState &state);
 
   public:
-    InputReport() = default;
+    InputReport(std::shared_ptr<SettingsStore> settings_store);
 
     usb_report_t getReport(const InputState &state, usb_mode_t mode);
 };

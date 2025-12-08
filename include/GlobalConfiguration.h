@@ -5,9 +5,13 @@
 #include "peripherals/Display.h"
 #include "peripherals/Drum.h"
 #include "peripherals/StatusLed.h"
+#include "utils/KeyboardMappings.h"
 
 #include "hardware/i2c.h"
 #include "hardware/spi.h"
+
+// Include tinyusb HID definitions for keycodes
+#include "class/hid/hid.h"
 
 namespace Doncon::Config {
 
@@ -21,6 +25,43 @@ struct I2c {
 namespace Default {
 
 const usb_mode_t usb_mode = USB_MODE_KEYBOARD_P1;
+
+const Utils::DrumKeys drum_keys_p1 = {
+    .ka_left = HID_KEY_D,
+    .don_left = HID_KEY_F,
+    .don_right = HID_KEY_J,
+    .ka_right = HID_KEY_K,
+};
+
+const Utils::DrumKeys drum_keys_p2 = {
+    .ka_left = HID_KEY_C,
+    .don_left = HID_KEY_B,
+    .don_right = HID_KEY_N,
+    .ka_right = HID_KEY_COMMA,
+};
+
+const Utils::ControllerKeys controller_keys = {
+    .up = HID_KEY_ARROW_UP,
+    .down = HID_KEY_ARROW_DOWN,
+    .left = HID_KEY_ARROW_LEFT,
+    .right = HID_KEY_ARROW_RIGHT,
+
+    .north = HID_KEY_L,
+    .east = HID_KEY_BACKSPACE,
+    .south = HID_KEY_ENTER,
+    .west = HID_KEY_P,
+
+    .l = HID_KEY_Q,
+    .r = HID_KEY_E,
+
+    .start = HID_KEY_ESCAPE,
+    .select = HID_KEY_TAB,
+    .home = HID_KEY_NONE,
+    .share = HID_KEY_NONE,
+    
+    .l3 = HID_KEY_NONE,
+    .r3 = HID_KEY_NONE,
+};
 
 const I2c i2c_config = {
     .sda_pin = 6,

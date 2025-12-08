@@ -31,6 +31,9 @@ SettingsStore::SettingsStore()
                      .crosstalk_debounce = Config::Default::drum_config.crosstalk_debounce,
                      .key_timeout_ms = Config::Default::drum_config.key_timeout_ms,
                      .weighted_comparison_mode = Config::Default::drum_config.weighted_comparison_mode,
+                     .drum_keys_p1 = Config::Default::drum_keys_p1,
+                     .drum_keys_p2 = Config::Default::drum_keys_p2,
+                     .controller_keys = Config::Default::controller_keys,
                      ._padding = {}}) {
     uint32_t current_page = m_flash_offset + m_flash_size - m_store_size;
     bool found_valid = false;
@@ -177,6 +180,43 @@ void SettingsStore::setCutoffThresholds(const Peripherals::Drum::Config::Thresho
 Peripherals::Drum::Config::Thresholds SettingsStore::getCutoffThresholds() const {
     return m_store_cache.cutoff_thresholds;
 }
+
+void SettingsStore::setDrumKeysP1(const DrumKeys &keys) {
+    if (m_store_cache.drum_keys_p1.don_left != keys.don_left ||
+        m_store_cache.drum_keys_p1.don_right != keys.don_right ||
+        m_store_cache.drum_keys_p1.ka_left != keys.ka_left ||
+        m_store_cache.drum_keys_p1.ka_right != keys.ka_right) {
+        m_store_cache.drum_keys_p1 = keys;
+        m_dirty = true;
+    }
+}
+DrumKeys SettingsStore::getDrumKeysP1() const { return m_store_cache.drum_keys_p1; }
+
+void SettingsStore::setDrumKeysP2(const DrumKeys &keys) {
+    if (m_store_cache.drum_keys_p2.don_left != keys.don_left ||
+        m_store_cache.drum_keys_p2.don_right != keys.don_right ||
+        m_store_cache.drum_keys_p2.ka_left != keys.ka_left ||
+        m_store_cache.drum_keys_p2.ka_right != keys.ka_right) {
+        m_store_cache.drum_keys_p2 = keys;
+        m_dirty = true;
+    }
+}
+DrumKeys SettingsStore::getDrumKeysP2() const { return m_store_cache.drum_keys_p2; }
+
+void SettingsStore::setControllerKeys(const ControllerKeys &keys) {
+    // Simple memcmp equivalent check or just copy and set dirty if different. 
+    // Since struct is larger, strict member check is verbose. Using naive assignment for now.
+    // Ideally we check if different.
+    // For brevity, I'll just check a few or assume always dirty on set (not optimal but safe).
+    // Actually, let's just do member-wise check or cast to byte array.
+    // Since it's packed, I can use memcmp.
+    // But I don't have memcmp included.
+    // I'll just set it dirty always for now or do a simple check.
+    // Actually, simple assignment is fine, setting dirty is cheap.
+    m_store_cache.controller_keys = keys;
+    m_dirty = true;
+}
+ControllerKeys SettingsStore::getControllerKeys() const { return m_store_cache.controller_keys; }
 
 void SettingsStore::store() {
     if (m_dirty) {
