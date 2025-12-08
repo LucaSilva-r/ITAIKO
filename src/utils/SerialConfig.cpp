@@ -129,8 +129,8 @@ void SerialConfig::handleWriteData(const char *data) {
 }
 
 void SerialConfig::sendAllSettings() {
-    // Send 18 values: 9 hidtaiko-compatible + 5 extended (double trigger) + 4 extended (cutoff thresholds)
-    for (int i = 0; i < 18; i++) {
+    // Send 42 values: 9 hidtaiko-compatible + 5 extended (double trigger) + 4 extended (cutoff thresholds) + 24 extended (key mappings)
+    for (int i = 0; i < 42; i++) {
         uint16_t value = getSettingByKey(i);
         printf("%d:%d\n", i, value);
         stdio_flush();
@@ -181,6 +181,61 @@ uint16_t SerialConfig::getSettingByKey(int key) {
         return m_settings_store.getCutoffThresholds().don_right;
     case 17: // Cutoff Ka Right
         return m_settings_store.getCutoffThresholds().ka_right;
+
+    // Drum Keys P1 (Keys 18-21)
+    case 18: // Drum P1 Ka Left
+        return m_settings_store.getDrumKeysP1().ka_left;
+    case 19: // Drum P1 Don Left
+        return m_settings_store.getDrumKeysP1().don_left;
+    case 20: // Drum P1 Don Right
+        return m_settings_store.getDrumKeysP1().don_right;
+    case 21: // Drum P1 Ka Right
+        return m_settings_store.getDrumKeysP1().ka_right;
+
+    // Drum Keys P2 (Keys 22-25)
+    case 22: // Drum P2 Ka Left
+        return m_settings_store.getDrumKeysP2().ka_left;
+    case 23: // Drum P2 Don Left
+        return m_settings_store.getDrumKeysP2().don_left;
+    case 24: // Drum P2 Don Right
+        return m_settings_store.getDrumKeysP2().don_right;
+    case 25: // Drum P2 Ka Right
+        return m_settings_store.getDrumKeysP2().ka_right;
+
+    // Controller Keys (Keys 26-41)
+    case 26: // Controller Up
+        return m_settings_store.getControllerKeys().up;
+    case 27: // Controller Down
+        return m_settings_store.getControllerKeys().down;
+    case 28: // Controller Left
+        return m_settings_store.getControllerKeys().left;
+    case 29: // Controller Right
+        return m_settings_store.getControllerKeys().right;
+    case 30: // Controller North
+        return m_settings_store.getControllerKeys().north;
+    case 31: // Controller East
+        return m_settings_store.getControllerKeys().east;
+    case 32: // Controller South
+        return m_settings_store.getControllerKeys().south;
+    case 33: // Controller West
+        return m_settings_store.getControllerKeys().west;
+    case 34: // Controller L
+        return m_settings_store.getControllerKeys().l;
+    case 35: // Controller R
+        return m_settings_store.getControllerKeys().r;
+    case 36: // Controller Start
+        return m_settings_store.getControllerKeys().start;
+    case 37: // Controller Select
+        return m_settings_store.getControllerKeys().select;
+    case 38: // Controller Home
+        return m_settings_store.getControllerKeys().home;
+    case 39: // Controller Share
+        return m_settings_store.getControllerKeys().share;
+    case 40: // Controller L3
+        return m_settings_store.getControllerKeys().l3;
+    case 41: // Controller R3
+        return m_settings_store.getControllerKeys().r3;
+
     default:
         return 0;
     }
@@ -262,6 +317,157 @@ void SerialConfig::setSettingByKey(int key, uint16_t value) {
         double_thresholds.ka_right = value;
         m_settings_store.setCutoffThresholds(double_thresholds);
         break;
+
+    // Drum Keys P1 (Keys 18-21)
+    case 18: { // Drum P1 Ka Left
+        auto drum_keys = m_settings_store.getDrumKeysP1();
+        drum_keys.ka_left = static_cast<uint8_t>(value);
+        m_settings_store.setDrumKeysP1(drum_keys);
+        break;
+    }
+    case 19: { // Drum P1 Don Left
+        auto drum_keys = m_settings_store.getDrumKeysP1();
+        drum_keys.don_left = static_cast<uint8_t>(value);
+        m_settings_store.setDrumKeysP1(drum_keys);
+        break;
+    }
+    case 20: { // Drum P1 Don Right
+        auto drum_keys = m_settings_store.getDrumKeysP1();
+        drum_keys.don_right = static_cast<uint8_t>(value);
+        m_settings_store.setDrumKeysP1(drum_keys);
+        break;
+    }
+    case 21: { // Drum P1 Ka Right
+        auto drum_keys = m_settings_store.getDrumKeysP1();
+        drum_keys.ka_right = static_cast<uint8_t>(value);
+        m_settings_store.setDrumKeysP1(drum_keys);
+        break;
+    }
+
+    // Drum Keys P2 (Keys 22-25)
+    case 22: { // Drum P2 Ka Left
+        auto drum_keys = m_settings_store.getDrumKeysP2();
+        drum_keys.ka_left = static_cast<uint8_t>(value);
+        m_settings_store.setDrumKeysP2(drum_keys);
+        break;
+    }
+    case 23: { // Drum P2 Don Left
+        auto drum_keys = m_settings_store.getDrumKeysP2();
+        drum_keys.don_left = static_cast<uint8_t>(value);
+        m_settings_store.setDrumKeysP2(drum_keys);
+        break;
+    }
+    case 24: { // Drum P2 Don Right
+        auto drum_keys = m_settings_store.getDrumKeysP2();
+        drum_keys.don_right = static_cast<uint8_t>(value);
+        m_settings_store.setDrumKeysP2(drum_keys);
+        break;
+    }
+    case 25: { // Drum P2 Ka Right
+        auto drum_keys = m_settings_store.getDrumKeysP2();
+        drum_keys.ka_right = static_cast<uint8_t>(value);
+        m_settings_store.setDrumKeysP2(drum_keys);
+        break;
+    }
+
+    // Controller Keys (Keys 26-41)
+    case 26: { // Controller Up
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.up = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 27: { // Controller Down
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.down = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 28: { // Controller Left
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.left = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 29: { // Controller Right
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.right = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 30: { // Controller North
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.north = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 31: { // Controller East
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.east = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 32: { // Controller South
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.south = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 33: { // Controller West
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.west = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 34: { // Controller L
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.l = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 35: { // Controller R
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.r = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 36: { // Controller Start
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.start = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 37: { // Controller Select
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.select = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 38: { // Controller Home
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.home = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 39: { // Controller Share
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.share = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 40: { // Controller L3
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.l3 = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+    case 41: { // Controller R3
+        auto controller_keys = m_settings_store.getControllerKeys();
+        controller_keys.r3 = static_cast<uint8_t>(value);
+        m_settings_store.setControllerKeys(controller_keys);
+        break;
+    }
+
     default:
         break;
     }
