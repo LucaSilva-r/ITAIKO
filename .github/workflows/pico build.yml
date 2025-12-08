@@ -47,6 +47,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cycjimmy/semantic-release-action@v4
         with:
+          semantic_version: 24
           dry_run: true
           extra_plugins: |
             @semantic-release/commit-analyzer
@@ -89,6 +90,7 @@ jobs:
         if: steps.semantic.outputs.new_release_published == 'true'
         uses: cycjimmy/semantic-release-action@v4
         with:
+          semantic_version: 24
           dry_run: false
           extra_plugins: |
             @semantic-release/commit-analyzer
