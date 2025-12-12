@@ -9,40 +9,47 @@ The serial configuration system allows you to read and modify controller setting
 - Automated configuration scripts
 - Bulk parameter adjustments
 - Remote configuration
+- Web-based configurator integration
 
 ## Protocol
 
-The system uses a simple command-based protocol similar to hidtaiko's web configurator:
+The system uses a simple command-based protocol:
 
 ### Commands
 
 **Configuration Commands:**
-- **1000** - Read all settings (returns key:value pairs)
+- **1000** - Read all settings (returns 46 key:value pairs)
 - **1001** - Save current settings to flash memory
 - **1002** - Enter write mode (to send key:value pairs)
 - **1003** - Reload settings from flash
+- **1004** - Reboot to BOOTSEL mode (firmware update mode)
 
 **Streaming Commands:**
 - **2000** - Start streaming sensor data (CSV format, ~100Hz)
 - **2001** - Stop streaming sensor data
 
-### Setting Keys (HIDtaiko-Compatible)
+### Setting Keys
 
-**Compatible with: https://kasasiki3.github.io/ver1.3_webapp_rp2040version/**
+**Trigger Thresholds:**
 
-| Key | HIDtaiko Name | DonCon2040 Setting | Type | Description |
-|-----|---------------|-------------------|------|-------------|
-| 0 | Left Face | Don Left Threshold | uint32 | Left face (don) sensitivity |
-| 1 | Left Rim | Ka Left Threshold | uint32 | Left rim (ka) sensitivity |
-| 2 | Right Face | Don Right Threshold | uint32 | Right face (don) sensitivity |
-| 3 | Right Rim | Ka Right Threshold | uint32 | Right rim (ka) sensitivity |
-| 4 | B delay | Don Debounce | uint16 | Next input time after face hit (ms) |
-| 5 | C delay | Kat Debounce | uint16 | Rim input acceptance time (ms) |
-| 6 | D delay | Crosstalk Debounce | uint16 | Time to ignore rim after face (ms) |
-| 7 | H delay | Key Timeout | uint16 | Input limit for simulators (ms) |
-| 8 | A delay | Debounce Delay | uint16 | Key hold time (ms) |
+| Key | Setting | Type | Description |
+|-----|---------|------|-------------|
+| 0 | Don Left Threshold | uint32 | Left face (don) sensitivity |
+| 1 | Ka Left Threshold | uint32 | Left rim (ka) sensitivity |
+| 2 | Don Right Threshold | uint32 | Right face (don) sensitivity |
+| 3 | Ka Right Threshold | uint32 | Right rim (ka) sensitivity |
 
-### Extended Keys (DonCon2040-Specific)
+**Debounce Settings:**
+
+| Key | Setting | Type | Description |
+|-----|---------|------|-------------|
+| 4 | Don Debounce | uint16 | Lockout time between don hits (left/right) (ms) |
+| 5 | Kat Debounce | uint16 | Lockout time between ka hits (left/right) (ms) |
+| 6 | Crosstalk Debounce | uint16 | Time to ignore ka after don hit (ms) |
+| 7 | Debounce Delay | uint16 | Same-pad lockout time (can't hit same pad twice) (ms) |
+| 8 | Key Timeout | uint16 | How long button appears pressed to OS (ms) |
+
+**Double Trigger Settings:**
 
 | Key | Setting | Type | Description |
 |-----|---------|------|-------------|
@@ -52,7 +59,64 @@ The system uses a simple command-based protocol similar to hidtaiko's web config
 | 12 | Double Trigger Don Right | uint32 | Right face double trigger threshold |
 | 13 | Double Trigger Ka Right | uint32 | Right rim double trigger threshold |
 
-**Note:** Extended keys (9-13) are **NOT** compatible with the hidtaiko web configurator. They can only be accessed via command-line tools or custom scripts.
+**Cutoff Thresholds:**
+
+| Key | Setting | Type | Description |
+|-----|---------|------|-------------|
+| 14 | Cutoff Don Left | uint16 | Don left cutoff value |
+| 15 | Cutoff Ka Left | uint16 | Ka left cutoff value |
+| 16 | Cutoff Don Right | uint16 | Don right cutoff value |
+| 17 | Cutoff Ka Right | uint16 | Ka right cutoff value |
+
+**Keyboard Mappings - Drum P1:**
+
+| Key | Setting | Type | Description |
+|-----|---------|------|-------------|
+| 18 | Drum P1 Ka Left | uint16 | Keyboard key code for P1 ka left |
+| 19 | Drum P1 Don Left | uint16 | Keyboard key code for P1 don left |
+| 20 | Drum P1 Don Right | uint16 | Keyboard key code for P1 don right |
+| 21 | Drum P1 Ka Right | uint16 | Keyboard key code for P1 ka right |
+
+**Keyboard Mappings - Drum P2:**
+
+| Key | Setting | Type | Description |
+|-----|---------|------|-------------|
+| 22 | Drum P2 Ka Left | uint16 | Keyboard key code for P2 ka left |
+| 23 | Drum P2 Don Left | uint16 | Keyboard key code for P2 don left |
+| 24 | Drum P2 Don Right | uint16 | Keyboard key code for P2 don right |
+| 25 | Drum P2 Ka Right | uint16 | Keyboard key code for P2 ka right |
+
+**Keyboard Mappings - Controller:**
+
+| Key | Setting | Type | Description |
+|-----|---------|------|-------------|
+| 26 | Controller Up | uint16 | Keyboard key code for D-pad up |
+| 27 | Controller Down | uint16 | Keyboard key code for D-pad down |
+| 28 | Controller Left | uint16 | Keyboard key code for D-pad left |
+| 29 | Controller Right | uint16 | Keyboard key code for D-pad right |
+| 30 | Controller North | uint16 | Keyboard key code for North button (Y/Triangle) |
+| 31 | Controller East | uint16 | Keyboard key code for East button (B/Circle) |
+| 32 | Controller South | uint16 | Keyboard key code for South button (A/Cross) |
+| 33 | Controller West | uint16 | Keyboard key code for West button (X/Square) |
+| 34 | Controller L | uint16 | Keyboard key code for L button |
+| 35 | Controller R | uint16 | Keyboard key code for R button |
+| 36 | Controller Start | uint16 | Keyboard key code for Start |
+| 37 | Controller Select | uint16 | Keyboard key code for Select |
+| 38 | Controller Home | uint16 | Keyboard key code for Home |
+| 39 | Controller Share | uint16 | Keyboard key code for Share |
+| 40 | Controller L3 | uint16 | Keyboard key code for L3 |
+| 41 | Controller R3 | uint16 | Keyboard key code for R3 |
+
+**ADC Channel Mappings:**
+
+| Key | Setting | Type | Description |
+|-----|---------|------|-------------|
+| 42 | ADC Channel Don Left | uint16 | ADC channel number for don left (0-3) |
+| 43 | ADC Channel Ka Left | uint16 | ADC channel number for ka left (0-3) |
+| 44 | ADC Channel Don Right | uint16 | ADC channel number for don right (0-3) |
+| 45 | ADC Channel Ka Right | uint16 | ADC channel number for ka right (0-3) |
+
+**Note:** All 46 keys (0-45) can be configured via serial protocol using command-line tools or custom scripts.
 
 ## Usage Examples
 
@@ -93,8 +157,9 @@ python test_serial_config.py COM3 reload
 When you send **1002**, the device enters write mode and accepts key:value pairs:
 - Format: `key:value` (e.g., `0:800`)
 - Multiple values can be sent space-separated: `0:800 1:900 2:800`
-- Write mode automatically exits after **14 values** are received (9 hidtaiko + 5 extended)
+- Write mode exits automatically after receiving at least one value
 - Values are applied immediately but not saved to flash until you send **1001**
+- The device supports **46 keys total** (0-45)
 
 ### Streaming Mode
 
@@ -131,18 +196,17 @@ The serial configuration system:
 - ⚠️ Does NOT require menu system or cause settings conflicts
 - ⚠️ Changes take effect immediately but must be saved manually
 
-## Comparison with hidtaiko
+## Feature Summary
 
-| Feature | hidtaiko | DonCon2040 Serial Config |
-|---------|----------|--------------------------|
-| Protocol | Same command codes (1000-1003) | ✅ Same command codes + streaming (2000-2001) |
-| Parameter Mapping | Keys 0-8 (9 values) | ✅ Keys 0-8 (9 values) + Keys 9-13 (5 extended) |
-| Web Configurator | kasasiki3.github.io | ✅ **Fully Compatible!** (keys 0-8 only) |
-| Value Storage | uint16_t (0-65535) | uint32_t for thresholds, uint16_t for delays |
-| Integration | Standalone | Integrated with SettingsStore |
-| Persistence | Manual flash write | Managed by SettingsStore |
-| Streaming Mode | N/A | ✅ Commands 2000/2001 for live sensor data (~100Hz) |
-| Extra Features | N/A | Double trigger settings (keys 9-13), sensor streaming |
+| Feature | Description |
+|---------|-------------|
+| Protocol | Commands 1000-1004 (config), 2000-2001 (streaming) |
+| Parameters | 46 configurable keys (0-45) |
+| Value Storage | uint32_t for thresholds, uint16_t for other settings |
+| Integration | Integrated with SettingsStore for persistence |
+| Persistence | Automatic flash wear leveling |
+| Streaming Mode | Commands 2000/2001 for live sensor data (~100Hz) |
+| Features | Thresholds, debounce, double trigger, cutoffs, keyboard mappings, ADC channels |
 
 ## USB Mode Compatibility
 
