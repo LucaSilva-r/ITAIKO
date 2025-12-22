@@ -27,6 +27,7 @@ The system uses a simple command-based protocol:
 **Streaming Commands:**
 - **2000** - Start streaming sensor data (CSV format, ~100Hz)
 - **2001** - Stop streaming sensor data
+- **2002** - Start streaming input status (binary format, each pad is a bit)
 
 **Custom Boot Screen Commands:**
 - **3000** - Start custom boot screen bitmap upload (then send binary BMP data)
@@ -175,20 +176,29 @@ When you send **2000**, the device starts streaming sensor data:
 - **Rate:** ~100Hz (10ms between samples)
 - **Stop:** Send **2001** to stop streaming
 
-**CSV Format:**
+**CSV Format (Sensor Data):**
 ```
 triggered_ka_left,ka_raw,triggered_don_left,don_left_raw,triggered_don_right,don_right_raw,triggered_ka_right,ka_right_raw
 ```
 
+### Input Status Streaming
+
+When you send **2002**, the device starts streaming only the digital input status:
+- **Format:** Hexadecimal encoded bitmask (0-F)
+- **Example:** `6` (Binary 0110 -> Don Right + Don Left triggered)
+- **Stop:** Send **2001** to stop streaming
+
+**Bitmask Format:**
+The output is a single hexadecimal character representing the lower 4 bits of the byte.
+- **Bit 0 (LSB, Value 1):** Ka Left
+- **Bit 1 (Value 2):** Don Left
+- **Bit 2 (Value 4):** Don Right
+- **Bit 3 (Value 8):** Ka Right
+
 **Usage:**
 ```bash
 # Start streaming
-python test_serial_config.py COM3 stream
-
-# (In your script, read lines from serial port and parse CSV)
-
-# Stop streaming
-python test_serial_config.py COM3 stopstream
+python test_serial_config.py COM3 stream_input
 ```
 
 ## Custom Boot Screen Upload
