@@ -161,7 +161,7 @@ class SerialConfig {
     void handleCommand(int command_value);
     void handleWriteData(const char *data);
     void sendAllSettings();
-    void sendSensorData(const InputState &input_state, uint16_t ka_l, uint16_t don_l, uint16_t don_r, uint16_t ka_r);
+    void sendSensorData(uint16_t ka_l, uint16_t don_l, uint16_t don_r, uint16_t ka_r);
     void sendInputData(const InputState &input_state);
     uint16_t getSettingByKey(int key);
     void setSettingByKey(int key, uint16_t value);

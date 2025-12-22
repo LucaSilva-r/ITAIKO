@@ -171,14 +171,27 @@ When you send **1002**, the device enters write mode and accepts key:value pairs
 ### Streaming Mode
 
 When you send **2000**, the device starts streaming sensor data:
-- **Format:** CSV with triggered flags and raw ADC values
-- **Example:** `F,200,T,1000,F,300,F,254` (ka_left, don_left, don_right, ka_right)
-- **Rate:** ~100Hz (10ms between samples)
+- **Format:** 16-character Hexadecimal string (64-bit packed integer)
+- **Content:** 4 x 16-bit unsigned integers (Raw ADC values)
+- **Example:** `01F403E801F400FF` (KaL:500, DonL:1000, DonR:500, KaR:255)
 - **Stop:** Send **2001** to stop streaming
 
-**CSV Format (Sensor Data):**
-```
-triggered_ka_left,ka_raw,triggered_don_left,don_left_raw,triggered_don_right,don_right_raw,triggered_ka_right,ka_right_raw
+**Packing Structure (64-bit Hex):**
+`AAAABBBBCCCCDDDD`
+- **AAAA (Bits 48-63):** Ka Left Raw
+- **BBBB (Bits 32-47):** Don Left Raw
+- **CCCC (Bits 16-31):** Don Right Raw
+- **DDDD (Bits 0-15):**  Ka Right Raw
+
+**Usage:**
+```bash
+# Start streaming
+python test_serial_config.py COM3 stream
+
+# (In your script, read line, parse as hex int64, unpack)
+# value = int(line, 16)
+# ka_left = (value >> 48) & 0xFFFF
+# ...
 ```
 
 ### Input Status Streaming

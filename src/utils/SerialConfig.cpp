@@ -634,17 +634,16 @@ void SerialConfig::setSettingByKey(int key, uint16_t value) {
     }
 }
 
-void SerialConfig::sendSensorData(const InputState &input_state, uint16_t ka_l, uint16_t don_l, uint16_t don_r,
+void SerialConfig::sendSensorData(uint16_t ka_l, uint16_t don_l, uint16_t don_r,
                                       uint16_t ka_r) {
-    const auto &drum = input_state.drum;
+    // Pack 4x 16-bit values into one 64-bit integer
+    // Order: Ka Left (MSB), Don Left, Don Right, Ka Right (LSB)
+    uint64_t packet = ((uint64_t)ka_l << 48) |
+                      ((uint64_t)don_l << 32) |
+                      ((uint64_t)don_r << 16) |
+                      ((uint64_t)ka_r);
 
-    // CSV format:
-    // triggered_ka_left,ka_raw,ka_duration,triggered_don_left,don_left_raw,don_left_duration,triggered_don_right,don_right_raw,don_right_duration,triggered_ka_right,ka_right_raw,ka_right_duration
-    printf("%c,%d,%lu,%c,%d,%lu,%c,%d,%lu,%c,%d,%lu\n",                           //
-           (drum.ka_left.triggered ? 'T' : 'F'), ka_l, drum.ka_left.duration_ms,   //
-           (drum.don_left.triggered ? 'T' : 'F'), don_l, drum.don_left.duration_ms, //
-           (drum.don_right.triggered ? 'T' : 'F'), don_r, drum.don_right.duration_ms,   //
-           (drum.ka_right.triggered ? 'T' : 'F'), ka_r, drum.ka_right.duration_ms);
+    printf("%016llX\n", packet);
     stdio_flush();
 }
 
@@ -679,7 +678,7 @@ void SerialConfig::sendSensorDataIfStreaming(const InputState &input_state) {
         const uint16_t don_right_avg = m_don_right_sum / m_sample_count;
         const uint16_t ka_right_avg = m_ka_right_sum / m_sample_count;
 
-        sendSensorData(input_state, ka_left_avg, don_left_avg, don_right_avg, ka_right_avg);
+        sendSensorData(ka_left_avg, don_left_avg, don_right_avg, ka_right_avg);
 
         // Reset accumulators
         m_don_left_sum = 0;
