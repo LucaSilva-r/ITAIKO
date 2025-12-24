@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 namespace Doncon::Peripherals {
 
@@ -25,7 +26,10 @@ class StatusLed {
 
         uint8_t led_enable_pin;
         uint8_t led_pin;
+        uint16_t led_count;
         bool is_rgbw;
+        bool reversed;
+        uint16_t max_current_ma;
 
         uint8_t brightness;
         bool enable_player_color;
@@ -36,6 +40,12 @@ class StatusLed {
 
     Utils::InputState m_input_state;
     std::optional<Config::Color> m_player_color;
+
+    float m_left_intensity = 0.0f;
+    float m_right_intensity = 0.0f;
+    Config::Color m_left_color = {};
+    Config::Color m_right_color = {};
+    std::vector<uint32_t> m_leds;
 
   public:
     StatusLed(const Config &config);

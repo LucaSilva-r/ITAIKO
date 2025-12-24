@@ -114,21 +114,21 @@ const Peripherals::Drum::Config drum_config = {
         },
 
     // ADC Config, either InternalAdc or ExternalAdc
-    .adc_config =
-        Peripherals::Drum::Config::InternalAdc{
-            .sample_count = 16,
-        },
-
     // .adc_config =
-    //     Peripherals::Drum::Config::ExternalAdc{
-    //         .spi_block = spi1,
-    //         .spi_speed_hz = 2000000,
-    //         .spi_mosi_pin = 11,
-    //         .spi_miso_pin = 12,
-    //         .spi_sclk_pin = 10,
-    //         .spi_scsn_pin = 13,
-    //         .spi_level_shifter_enable_pin = 9,
+    //     Peripherals::Drum::Config::InternalAdc{
+    //         .sample_count = 16,
     //     },
+
+    .adc_config =
+        Peripherals::Drum::Config::ExternalAdc{
+            .spi_block = spi1,
+            .spi_speed_hz = 2000000,
+            .spi_mosi_pin = 11,
+            .spi_miso_pin = 12,
+            .spi_sclk_pin = 10,
+            .spi_scsn_pin = 13,
+            .spi_level_shifter_enable_pin = 9,
+        },
 };
   
 const Peripherals::Controller::Config controller_config = {
@@ -136,10 +136,10 @@ const Peripherals::Controller::Config controller_config = {
         {
             .dpad =
                 {
-                    .up = 13,
-                    .down = 9,
-                    .left = 12,
-                    .right = 10,
+                    .up = 22,
+                    .down = 23,
+                    .left = 24,
+                    .right = 20,
                 },
             .buttons =
                 {
@@ -154,7 +154,7 @@ const Peripherals::Controller::Config controller_config = {
                     .start = 3,
                     .select = 14,
                     .home = 5,
-                    .share = 11,
+                    .share = 19,
                 },
         },
 
@@ -173,15 +173,18 @@ const Peripherals::Controller::Config controller_config = {
 };
 
 const Peripherals::StatusLed::Config led_config = {
-    .idle_color = {.r = 128, .g = 128, .b = 128},
-    .don_left_color = {.r = 255, .g = 0, .b = 0},
-    .ka_left_color = {.r = 0, .g = 0, .b = 255},
-    .don_right_color = {.r = 255, .g = 255, .b = 0},
-    .ka_right_color = {.r = 0, .g = 255, .b = 255},
+    .idle_color = {.r = 0, .g = 0, .b = 0},
+    .don_left_color = {.r = 255, .g = 66, .b = 33},
+    .ka_left_color = {.r = 107, .g = 189, .b = 198},
+    .don_right_color = {.r = 255, .g = 66, .b = 33},
+    .ka_right_color = {.r = 107, .g = 189, .b = 198},
 
     .led_enable_pin = 25,
-    .led_pin = 16,
+    .led_pin = 29,
+    .led_count = 84,
     .is_rgbw = false,
+    .reversed = true,
+    .max_current_ma = 350,
 
     .brightness = 255,
     .enable_player_color = true,
