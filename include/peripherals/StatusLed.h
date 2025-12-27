@@ -36,15 +36,27 @@ class StatusLed {
     };
 
   private:
+    struct ColorFloat {
+        float r;
+        float g;
+        float b;
+    };
+
+    struct Ripple {
+        float origin;
+        float distance;
+        Config::Color color;
+    };
+
     Config m_config;
 
     Utils::InputState m_input_state;
+    Utils::InputState m_previous_input_state;
     std::optional<Config::Color> m_player_color;
 
-    float m_left_intensity = 0.0f;
-    float m_right_intensity = 0.0f;
-    Config::Color m_left_color = {};
-    Config::Color m_right_color = {};
+    std::vector<ColorFloat> m_led_states;
+    std::vector<Ripple> m_ripples;
+    uint32_t m_last_update_time = 0;
     std::vector<uint32_t> m_leds;
 
   public:

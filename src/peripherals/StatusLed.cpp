@@ -15,6 +15,8 @@ StatusLed::StatusLed(const Config &config) : m_config(config) {
 
     ws2812_init(pio0, config.led_pin, m_config.is_rgbw);
     m_leds.resize(m_config.led_count, 0);
+    m_led_states.resize(m_config.led_count, {0.0f, 0.0f, 0.0f});
+    m_last_update_time = to_ms_since_boot(get_absolute_time());
 }
 
 void StatusLed::setBrightness(const uint8_t brightness) { m_config.brightness = brightness; }
@@ -24,66 +26,115 @@ void StatusLed::setInputState(const Utils::InputState &input_state) { m_input_st
 void StatusLed::setPlayerColor(const Config::Color &color) { m_player_color = color; }
 
 void StatusLed::update() {
+    uint32_t now = to_ms_since_boot(get_absolute_time());
+    float dt = (now - m_last_update_time) / 1000.0f;
+    m_last_update_time = now;
+
+    // Prevent huge jumps if update is paused
+    if (dt > 0.1f) dt = 0.1f;
+
     const float brightness_factor = (float)m_config.brightness / (float)UINT8_MAX;
+    
+    // 1. Clear State (Ripples are the source of truth)
+    std::fill(m_led_states.begin(), m_led_states.end(), ColorFloat{0.0f, 0.0f, 0.0f});
 
-    // Decay intensities
-    m_left_intensity *= 0.97f;
-    m_right_intensity *= 0.97f;
-
-    if (m_left_intensity < 0.01f) m_left_intensity = 0.0f;
-    if (m_right_intensity < 0.01f) m_right_intensity = 0.0f;
-
-    // Check triggers
-    if (m_input_state.drum.don_left.triggered) {
-        m_left_intensity = 1.0f;
-        m_left_color = m_config.don_left_color;
-    } else if (m_input_state.drum.ka_left.triggered) {
-        m_left_intensity = 1.0f;
-        m_left_color = m_config.ka_left_color;
-    }
-
-    if (m_input_state.drum.don_right.triggered) {
-        m_right_intensity = 1.0f;
-        m_right_color = m_config.don_right_color;
-    } else if (m_input_state.drum.ka_right.triggered) {
-        m_right_intensity = 1.0f;
-        m_right_color = m_config.ka_right_color;
-    }
-
-    // Determine Idle Color
-    Config::Color idle = m_config.enable_player_color ? m_player_color.value_or(m_config.idle_color) : m_config.idle_color;
-
-    std::vector<Config::Color> frame_colors(m_config.led_count);
-    size_t center = m_config.led_count / 2;
-
-    for (size_t i = 0; i < m_config.led_count; ++i) {
-        float intensity = 0.0f;
-        Config::Color hit_color = {};
-
-        if (m_config.led_count == 1) {
-             if (m_left_intensity > m_right_intensity) {
-                 intensity = m_left_intensity;
-                 hit_color = m_left_color;
-             } else {
-                 intensity = m_right_intensity;
-                 hit_color = m_right_color;
-             }
+    // 2. Spawn Ripples
+    auto spawn_ripple = [&](const Config::Color &c, float origin) {
+        if (m_config.led_count < 2) {
+            // Fallback for single LED: just set state directly
+            m_led_states[0].r += c.r;
+            m_led_states[0].g += c.g;
+            m_led_states[0].b += c.b;
         } else {
-             if (i < center) {
-                intensity = m_left_intensity;
-                hit_color = m_left_color;
-             } else {
-                intensity = m_right_intensity;
-                hit_color = m_right_color;
-             }
+            m_ripples.push_back({origin, 0.0f, c});
+        }
+    };
+
+    float left_origin = (float)m_config.led_count * 0.25f;
+    float right_origin = (float)m_config.led_count * 0.75f;
+
+    if (m_input_state.drum.don_left.triggered && !m_previous_input_state.drum.don_left.triggered) {
+        spawn_ripple(m_config.don_left_color, left_origin);
+    } else if (m_input_state.drum.ka_left.triggered && !m_previous_input_state.drum.ka_left.triggered) {
+        spawn_ripple(m_config.ka_left_color, left_origin);
+    }
+
+    if (m_input_state.drum.don_right.triggered && !m_previous_input_state.drum.don_right.triggered) {
+        spawn_ripple(m_config.don_right_color, right_origin);
+    } else if (m_input_state.drum.ka_right.triggered && !m_previous_input_state.drum.ka_right.triggered) {
+        spawn_ripple(m_config.ka_right_color, right_origin);
+    }
+
+    m_previous_input_state = m_input_state;
+
+    // 3. Update & Render Ripples
+    const float MAX_DIST = (float)m_config.led_count / 2.0f;
+    const float RIPPLE_RADIUS = 3.0f;     // Radius of the light point in LEDs
+    const float MIN_SPEED = 40.0f;        // Minimum speed to ensure it finishes
+    const float SPEED_DECAY_FACTOR = 8.0f; // Speed = Remaining_Dist * Factor
+
+    for (auto it = m_ripples.begin(); it != m_ripples.end();) {
+        // Ease-Out Physics: Move faster when further from destination
+        float remaining = MAX_DIST - it->distance;
+        float speed = std::max(MIN_SPEED, remaining * SPEED_DECAY_FACTOR);
+        
+        it->distance += speed * dt;
+
+        if (it->distance >= MAX_DIST) {
+            it = m_ripples.erase(it);
+            continue;
         }
 
-        // Blend: Hit Color * Intensity + Idle * (1 - Intensity)
-        float inv_intensity = 1.0f - intensity;
+        // Render Particle Function (Soft Glow)
+        auto render_particle = [&](float center, const Config::Color &col) {
+             // Iterate over the integer footprint of the particle
+             int start_idx = (int)floor(center - RIPPLE_RADIUS);
+             int end_idx = (int)ceil(center + RIPPLE_RADIUS);
+
+             for (int i = start_idx; i <= end_idx; ++i) {
+                 float dist = std::abs((float)i - center);
+                 if (dist >= RIPPLE_RADIUS) continue;
+
+                 // Quadratic Falloff: (1 - d/r)^2 for smooth edges
+                 float intensity = 1.0f - (dist / RIPPLE_RADIUS);
+                 intensity *= intensity; 
+
+                 // Handle wrapping
+                 int led_idx = i;
+                 while (led_idx < 0) led_idx += m_config.led_count;
+                 while (led_idx >= (int)m_config.led_count) led_idx -= m_config.led_count;
+
+                 m_led_states[led_idx].r += col.r * intensity;
+                 m_led_states[led_idx].g += col.g * intensity;
+                 m_led_states[led_idx].b += col.b * intensity;
+             }
+        };
+
+        // Render two heads moving in opposite directions
+        render_particle(it->origin + it->distance, it->color);
+        render_particle(it->origin - it->distance, it->color);
+
+        ++it;
+    }
+
+    // 4. Composite Output
+    Config::Color idle = m_config.enable_player_color ? m_player_color.value_or(m_config.idle_color) : m_config.idle_color;
+    std::vector<Config::Color> frame_colors(m_config.led_count);
+
+    for (size_t i = 0; i < m_config.led_count; ++i) {
+        const auto &state = m_led_states[i];
         
-        float r = (float)hit_color.r * intensity + (float)idle.r * inv_intensity;
-        float g = (float)hit_color.g * intensity + (float)idle.g * inv_intensity;
-        float b = (float)hit_color.b * intensity + (float)idle.b * inv_intensity;
+        // Calculate intensity of the active effect to fade out the idle color
+        // Using max component as a rough brightness estimate for saturation
+        float state_max = std::max({state.r, state.g, state.b});
+        float active_intensity = std::min(1.0f, state_max / 255.0f);
+        float idle_weight = 1.0f - active_intensity;
+
+        // Composite: State + (Idle * Weight)
+        // We allow state to go > 255 internally (HDR-ish), but clamp at output.
+        float r = state.r + (float)idle.r * idle_weight;
+        float g = state.g + (float)idle.g * idle_weight;
+        float b = state.b + (float)idle.b * idle_weight;
 
         // Apply global brightness
         frame_colors[i].r = static_cast<uint8_t>(std::min(255.0f, r * brightness_factor));
@@ -91,7 +142,7 @@ void StatusLed::update() {
         frame_colors[i].b = static_cast<uint8_t>(std::min(255.0f, b * brightness_factor));
     }
 
-    // Current Limiting
+    // 5. Current Limiting
     uint32_t total_ma = 0;
     // Estimated: 60mA per LED at full white (255, 255, 255)
     // Formula: sum((r+g+b) / 765 * 60)
@@ -104,7 +155,7 @@ void StatusLed::update() {
         scale = (float)m_config.max_current_ma / (float)total_ma;
     }
 
-    // Convert to WS2812 pixel format
+    // 6. Convert to WS2812 pixel format
     for (size_t i = 0; i < m_config.led_count; ++i) {
         uint8_t r = static_cast<uint8_t>((float)frame_colors[i].r * scale);
         uint8_t g = static_cast<uint8_t>((float)frame_colors[i].g * scale);
