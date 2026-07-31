@@ -95,7 +95,9 @@ namespace Doncon::Utils {
  * 45: ADC Channel Ka Right (0-3)
  *
  * Special Output:
+ * Mode:Active USB mode token (e.g. "Mode:KEYBOARD_P1")
  * Version:Firmware Version String (e.g. "Version:0.0.0")
+ * Edition:Firmware edition, sent last to mark the end of the dump
  */
 class SerialConfig {
   public:

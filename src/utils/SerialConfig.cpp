@@ -19,6 +19,32 @@ uint8_t s_ps4_auth_buf[4096];
 // Base64 of a 3584-byte key = ceil(3584/3)*4 = 4780 bytes; +1 for null
 char s_b64_buf[4800];
 
+// Stable token for the active USB mode. A host that only sees the HID and CDC
+// interfaces cannot tell keyboard P1 from P2 — same VID:PID, same descriptors,
+// no serial number — so the mode is reported here instead. Tokens rather than
+// the enum value: the numbering is an implementation detail of this repo.
+const char *usbModeToken(usb_mode_t mode) {
+    switch (mode) {
+    case USB_MODE_KEYBOARD_P1:
+        return "KEYBOARD_P1";
+    case USB_MODE_KEYBOARD_P2:
+        return "KEYBOARD_P2";
+    case USB_MODE_SWITCH_TATACON:
+        return "SWITCH_TATACON";
+    case USB_MODE_PS4_TATACON:
+        return "PS4_TATACON";
+    case USB_MODE_XBOX360:
+        return "XBOX360";
+    case USB_MODE_USIO_TAIKO:
+        return "USIO_TAIKO";
+    case USB_MODE_MIDI:
+        return "MIDI";
+    case USB_MODE_DUALSHOCK3:
+        return "DUALSHOCK3";
+    }
+    return "UNKNOWN";
+}
+
 uint32_t crc32(const uint8_t *data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
     for (size_t i = 0; i < length; ++i) {
@@ -297,8 +323,11 @@ void SerialConfig::sendAllSettings() {
         stdio_flush();
         //sleep_us(5000); // Small delay between values
     }
+    printf("Mode:%s\n", usbModeToken(m_settings_store.getUsbMode()));
+    stdio_flush();
     printf("Version:%s\n", FIRMWARE_VERSION);
     stdio_flush();
+    // Edition stays last: hosts treat it as the end of the dump.
     printf("Edition:%s\n", getFirmwareEdition());
     stdio_flush();
 }
