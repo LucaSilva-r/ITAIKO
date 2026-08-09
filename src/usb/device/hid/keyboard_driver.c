@@ -91,7 +91,7 @@ uint8_t const keyboard_desc_cfg[] = {
     TUD_CONFIG_DESCRIPTOR(0x01, USBD_ITF_MAX, USBD_STR_LANGUAGE, USBD_KEYBOARD_DESC_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, USBD_MAX_POWER_MAX),
     TUD_HID_DESCRIPTOR(USBD_ITF_HID_BOOT, 0, HID_ITF_PROTOCOL_KEYBOARD, sizeof(keyboard_desc_hid_report),
-                       USBD_HID_BOOT_EP_IN, 8, 24),
+                       USBD_HID_BOOT_EP_IN, 8, 1),
     TUD_HID_DESCRIPTOR(USBD_ITF_HID_CONSUMER, 0, HID_ITF_PROTOCOL_NONE, sizeof(keyboard_desc_hid_consumer_report),
                        USBD_HID_CONSUMER_EP_IN, 8, 48),
     TUD_CDC_DESCRIPTOR(USBD_ITF_CDC, 0, USBD_CDC_EP_CMD, USBD_CDC_CMD_MAX_SIZE, USBD_CDC_EP_OUT, USBD_CDC_EP_IN,
