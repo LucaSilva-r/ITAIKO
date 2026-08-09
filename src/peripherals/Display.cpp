@@ -45,8 +45,20 @@ std::string modeToString(usb_mode_t mode) {
 Display::Display(const Config &config, std::shared_ptr<Utils::SettingsStore> settings_store)
     : m_config(config), m_settings_store(settings_store) {
 #ifndef NO_SCREEN
+    // Some boards intentionally have no display fitted. Probe once before
+    // initializing the SSD1306 so an absent display cannot turn every frame
+    // into a blocking I2C transaction.
+    const uint8_t probe[] = {0x00, 0xAE}; // command stream: display off
+    if (i2c_write_timeout_us(m_config.i2c_block, m_config.i2c_address, probe, sizeof(probe), false, 2000) !=
+        static_cast<int>(sizeof(probe))) {
+        return;
+    }
+
     m_display.external_vcc = false;
-    ssd1306_init(&m_display, 128, 64, m_config.i2c_address, m_config.i2c_block);
+    m_available = ssd1306_init(&m_display, 128, 64, m_config.i2c_address, m_config.i2c_block);
+    if (!m_available) {
+        return;
+    }
     ssd1306_clear(&m_display);
     m_last_activity_time = to_ms_since_boot(get_absolute_time());
 #endif
@@ -54,6 +66,10 @@ Display::Display(const Config &config, std::shared_ptr<Utils::SettingsStore> set
 
 void Display::setInputState(const Utils::InputState &state) {
 #ifndef NO_SCREEN
+    if (!m_available) {
+        return;
+    }
+
     // Check for any new activity to reset the screen timeout
     if (hasActivity(state)) {
         m_last_activity_time = to_ms_since_boot(get_absolute_time());
@@ -111,6 +127,14 @@ void Display::setMenuState(const Utils::Menu::State &menu_state) { m_menu_state 
 void Display::showIdle() { m_state = State::Idle; }
 void Display::showMenu() { m_state = State::Menu; }
 
+bool Display::isAvailable() const {
+#ifndef NO_SCREEN
+    return m_available;
+#else
+    return false;
+#endif
+}
+
 void Display::drawIdleScreen() {
 #ifndef NO_SCREEN
     // Header
@@ -149,6 +173,10 @@ void Display::drawIdleScreen() {
 
 void Display::drawSplashScreen() {
 #ifndef NO_SCREEN
+    if (!m_available) {
+        return;
+    }
+
     // Non-blocking splash screen - just draw it once and record the time
     ssd1306_clear(&m_display);
 
@@ -246,6 +274,10 @@ void Display::drawMenuScreen() {
 
 void Display::update() {
 #ifndef NO_SCREEN
+    if (!m_available) {
+        return;
+    }
+
     static const uint32_t interval_ms = 17;            // Limit to ~60fps
     static const uint32_t splash_duration_ms = 2000;   // Show splash for 2 seconds
     static const uint32_t screen_off_timeout_ms = 60000; // Turn off after 60 seconds of inactivity

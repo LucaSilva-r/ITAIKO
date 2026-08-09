@@ -28,6 +28,7 @@ namespace Doncon::Utils {
  * - Send "4001" to query PS4 auth presence (returns PS4_AUTH_STATUS:0 or :1)
  * - Send "4002" to clear stored PS4 auth credentials (reboots on success)
  * - Send "4003" to export stored PS4 auth credentials (serial hex, signature hex, key PEM base64)
+ * - Send "5000" to query OLED detection (returns DISPLAY_STATUS:PRESENT or :ABSENT)
  * - In write mode, send "key:value" pairs (e.g., "0:800")
  *
  * Configuration Keys (46 total, keys 0-45):
@@ -102,8 +103,10 @@ namespace Doncon::Utils {
 class SerialConfig {
   public:
     using SettingsAppliedCallback = std::function<void()>;
+    using DisplayPresentCallback = std::function<bool()>;
 
-    explicit SerialConfig(SettingsStore &settings_store, SettingsAppliedCallback on_settings_applied = nullptr);
+    explicit SerialConfig(SettingsStore &settings_store, SettingsAppliedCallback on_settings_applied = nullptr,
+                          DisplayPresentCallback display_present = nullptr);
 
     /**
      * @brief Process incoming serial data
@@ -126,6 +129,7 @@ class SerialConfig {
   private:
     SettingsStore &m_settings_store;
     SettingsAppliedCallback m_on_settings_applied;
+    DisplayPresentCallback m_display_present;
     bool m_write_mode;
     int m_write_count;
     bool m_streaming_mode;
@@ -157,6 +161,7 @@ class SerialConfig {
         QueryPS4Auth = 4001,
         ClearPS4Auth = 4002,
         ExportPS4Auth = 4003,
+        QueryDisplay = 5000,
     };
 
     void handleCommand(int command_value);

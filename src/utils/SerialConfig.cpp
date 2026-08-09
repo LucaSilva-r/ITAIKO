@@ -58,8 +58,10 @@ uint32_t crc32(const uint8_t *data, size_t length) {
 }
 } // namespace
 
-SerialConfig::SerialConfig(SettingsStore &settings_store, SettingsAppliedCallback on_settings_applied)
-    : m_settings_store(settings_store), m_on_settings_applied(on_settings_applied), m_write_mode(false),
+SerialConfig::SerialConfig(SettingsStore &settings_store, SettingsAppliedCallback on_settings_applied,
+                           DisplayPresentCallback display_present)
+    : m_settings_store(settings_store), m_on_settings_applied(on_settings_applied),
+      m_display_present(display_present), m_write_mode(false),
       m_write_count(0), m_streaming_mode(false), m_input_streaming_mode(false), m_last_stream_time(0), m_don_left_sum(0), m_ka_left_sum(0),
       m_don_right_sum(0), m_ka_right_sum(0), m_sample_count(0) {}
 
@@ -162,6 +164,11 @@ void SerialConfig::handleCommand(int command_value) {
 
     case Command::QueryPS4Auth:
         printf("PS4_AUTH_STATUS:%d\n", m_settings_store.hasPS4AuthCredentials() ? 1 : 0);
+        stdio_flush();
+        break;
+
+    case Command::QueryDisplay:
+        printf("DISPLAY_STATUS:%s\n", m_display_present && m_display_present() ? "PRESENT" : "ABSENT");
         stdio_flush();
         break;
 

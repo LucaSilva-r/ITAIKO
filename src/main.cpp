@@ -46,6 +46,7 @@ std::string g_ps4_auth_key_pem;
 std::array<uint8_t, Utils::PS4AuthProvider::SERIAL_LENGTH> g_ps4_auth_serial{};
 std::array<uint8_t, Utils::PS4AuthProvider::SIGNATURE_LENGTH> g_ps4_auth_signature{};
 std::atomic_bool g_led_is_active{false};
+std::atomic_bool g_display_present{false};
 const bool kControllerOnCore0 =
     std::holds_alternative<Peripherals::Controller::Config::InternalGpio>(Config::Default::controller_config.gpio_config);
 
@@ -86,6 +87,7 @@ void core1_task() {
 
     Peripherals::StatusLed led(Config::Default::led_config);
     Peripherals::Display display(Config::Default::display_config, g_settings_store);
+    g_display_present.store(display.isAvailable(), std::memory_order_release);
 
     Utils::PS4AuthProvider ps4authprovider(g_ps4_auth_key_pem);
     std::array<uint8_t, Utils::PS4AuthProvider::SIGNATURE_LENGTH> pending_auth_challenge{};
@@ -282,7 +284,8 @@ int main() {
     };
 
     Utils::Menu menu(settings_store);
-    Utils::SerialConfig serial_config(*settings_store, readSettings);
+    Utils::SerialConfig serial_config(
+        *settings_store, readSettings, []() { return g_display_present.load(std::memory_order_acquire); });
 
     std::array<uint8_t, Utils::PS4AuthProvider::SIGNATURE_LENGTH> auth_challenge_response{};
     if (settings_store->getPS4AuthCredentials(g_ps4_auth_serial, g_ps4_auth_signature, g_ps4_auth_key_pem)) {

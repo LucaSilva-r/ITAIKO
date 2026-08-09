@@ -47,6 +47,7 @@ class Display {
 
 #ifndef NO_SCREEN
     ssd1306_t m_display{};
+    bool m_available{false};
 #endif
     uint32_t m_next_frame_time{0};
     uint32_t m_splash_start_time{0};
@@ -77,6 +78,8 @@ class Display {
 
     void update();
     void drawSplashScreen();
+
+    bool isAvailable() const;
 };
 
 } // namespace Doncon::Peripherals

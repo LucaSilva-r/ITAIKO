@@ -26,7 +26,6 @@ SOFTWARE.
 #include <hardware/i2c.h>
 #include <pico/binary_info.h>
 #include <pico/stdlib.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -39,23 +38,15 @@ inline static void swap(int32_t *a, int32_t *b) {
     *b = *t;
 }
 
-inline static void fancy_write(i2c_inst_t *i2c, uint8_t addr, const uint8_t *src, size_t len, char *name) {
-    switch (i2c_write_blocking(i2c, addr, src, len, false)) {
-    case PICO_ERROR_GENERIC:
-        printf("[%s] addr not acknowledged!\n", name);
-        break;
-    case PICO_ERROR_TIMEOUT:
-        printf("[%s] timeout!\n", name);
-        break;
-    default:
-        // printf("[%s] wrote successfully %lu bytes!\n", name, len);
-        break;
-    }
+inline static void fancy_write(i2c_inst_t *i2c, uint8_t addr, const uint8_t *src, size_t len) {
+    // Display I2C failures must never flood stdio/USB CDC. Display presence is
+    // handled by the caller, and runtime bus faults are intentionally silent.
+    i2c_write_blocking(i2c, addr, src, len, false);
 }
 
 inline static void ssd1306_write(ssd1306_t *p, uint8_t val) {
     uint8_t d[2] = {0x00, val};
-    fancy_write(p->i2c_i, p->address, d, 2, "ssd1306_write");
+    fancy_write(p->i2c_i, p->address, d, 2);
 }
 
 bool ssd1306_init(ssd1306_t *p, uint16_t width, uint16_t height, uint8_t address, i2c_inst_t *i2c_instance) {
@@ -278,5 +269,5 @@ void ssd1306_show(ssd1306_t *p) {
 
     *(p->buffer - 1) = 0x40;
 
-    fancy_write(p->i2c_i, p->address, p->buffer - 1, p->bufsize + 1, "ssd1306_show");
+    fancy_write(p->i2c_i, p->address, p->buffer - 1, p->bufsize + 1);
 }
